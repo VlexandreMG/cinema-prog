@@ -1,0 +1,10 @@
+# Dossiers produits par ant (reconstruits à chaque build)
+build-file/cinema_jar/
+build-file/cinema_war/
+build-file/ear/
+
+# Fichiers d'IDE et du système
+*.iml
+.idea/
+.vscode/
+*.class
