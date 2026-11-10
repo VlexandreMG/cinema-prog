@@ -65,3 +65,7 @@ Vérifiées par `reserver` :
 
 Règle qui en découle pour la création des séances (scénario à venir) :
 - deux séances d'une même salle ne doivent pas se chevaucher : une séance doit commencer après la fin de la précédente.
+
+---
+
+Suite : les classes APJ et le script SQL qui implémentent cette base sont décrits dans [02_classes_apj.md](02_classes_apj.md).
