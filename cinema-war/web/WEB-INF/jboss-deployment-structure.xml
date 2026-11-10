@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Evite le conflit avec l'autre application APJ deployee sur le meme WildFly
+     (composant "pojo"/netty deja enregistre). Repris du mini-projet akoho. -->
+<jboss-deployment-structure>
+    <deployment>
+        <exclude-subsystems>
+            <subsystem name="pojo"/>
+        </exclude-subsystems>
+    </deployment>
+</jboss-deployment-structure>

@@ -8,3 +8,8 @@ build-file/ear/
 .idea/
 .vscode/
 *.class
+
+# Bibliothèques (233 Mo) : recopiées depuis le projet d'origine, voir docs/etape1/00_vue_ensemble.md
+build-file/lib/*.jar
+# Réécrit à chaque build
+cinema-war/web/dateBuild.txt

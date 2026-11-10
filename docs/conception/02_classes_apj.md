@@ -100,7 +100,8 @@ Une séance occupe sa salle de `debut` à `fin = debut + durée du film`. Deux s
 
 - Les 9 classes **compilent** avec `apj-core.jar` en Java 8 (comme WildFly 10).
 - Un petit programme a construit chaque objet : chacun trouve sa table, et le calcul de fin donne 18h00 + 166 min = 20h46.
-- **Pas encore testé contre Oracle** : le script SQL n'a pas été exécuté, et l'étape 1 (build, déploiement) n'est pas finie.
+- **Testé contre Oracle et dans WildFly** le 10/11/2026 (voir [l'étape 1](../etape1/00_vue_ensemble.md), sous-étape 7) : réservation créée, double réservation refusée.
+- Bug corrigé pendant ces tests : la réservation est maintenant enregistrée **validée** (`etat = 11`, `ConstanteEtat.getEtatValider()`) ; avant, elle valait 0 (« annulée ») et ses places restaient libres.
 
 ## Limites connues (à traiter plus tard)
 

@@ -6,7 +6,19 @@ Projet vierge construit sur le framework **APJ**, à partir du socle d'*async st
 - Base : Oracle 11g (conteneur Docker `oracle`), utilisateur `cinema`
 - Construction et déploiement : `ant`, depuis ce dossier
 
-Objectif de l'étape 1 : **se connecter et voir un menu vide**.
+## Lancer le cinéma
+
+```bash
+JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64 ant      # compile + déploie dans WildFly
+cd /home/balou/S5/MrTahina/akoho.zip/wildfly-10.1.0.Final
+JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64 ./bin/standalone.sh
+```
+Ouvrir http://localhost:8080/cinema, compte **`cinema` / `cinema`**.
+
+Base : `database/00_socle.sql`, puis `01_tables_metier.sql`, puis `02_donnees_test.sql`, dans le compte `cinema`.
+Les jars de `build-file/lib/` ne sont pas versionnés : voir `docs/etape1/00_vue_ensemble.md`, sous-étape 5.
+
+État : étape 1 terminée (connexion + menu), scénario 1 (réservation et paiement) en place. Voir `docs/conception/`.
 
 ## Structure
 

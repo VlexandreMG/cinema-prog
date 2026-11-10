@@ -4,6 +4,7 @@ import bean.CGenUtil;
 import bean.ClassMAPTable;
 import bean.ClassMere;
 import client.Client;
+import constante.ConstanteEtat;
 import film.Film;
 import film.Seance;
 import java.sql.Connection;
@@ -20,7 +21,8 @@ import utilitaire.Utilitaire;
  * Ses places sont les lignes RESERVATIONDETAIL (les filles), reliees par idreservation.
  *
  * Le paiement est immediat et complet : une reservation enregistree est une reservation payee.
- * La colonne etat servira plus tard a l'annulation (0 = annulee).
+ * etat : 11 = validee (payee), 0 = annulee (plus tard). Seules les reservations
+ * non annulees occupent leurs places.
  */
 public class Reservation extends ClassMere {
 
@@ -98,6 +100,9 @@ public class Reservation extends ClassMere {
         }
 
         this.setDaty(Utilitaire.dateDuJourSql());
+        // Payee tout de suite : la reservation est enregistree VALIDEE (11).
+        // Sans cette ligne, etat vaudrait 0 (= annulee) et ses places resteraient "libres".
+        this.setEtat(ConstanteEtat.getEtatValider());
         this.setMontanttotal(total);
         return super.createObject(u, c);   // INSERT de la mere, puis des lignes, dans la meme transaction
     }

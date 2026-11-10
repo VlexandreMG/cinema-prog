@@ -116,3 +116,22 @@ SELECT p.id, p.idsalle, s.nom AS salle, p.numero,
 FROM PLACE p
 JOIN SALLE s     ON s.id = p.idsalle
 JOIN TYPEPLACE t ON t.id = p.idtypeplace;
+
+-- Une reservation avec le nom du client, le film, la salle et la seance (classe reservation.ReservationLib)
+CREATE OR REPLACE VIEW RESERVATION_LIB AS
+SELECT r.id, r.idclient, c.nom AS client,
+       r.idseance, se.daty AS dateseance, se.heure,
+       f.id AS idfilm, f.titre AS film, sa.nom AS salle,
+       r.daty, r.montanttotal, r.etat
+FROM RESERVATION r
+JOIN CLIENT c  ON c.id  = r.idclient
+JOIN SEANCE se ON se.id = r.idseance
+JOIN FILM f    ON f.id  = se.idfilm
+JOIN SALLE sa  ON sa.id = f.idsalle;
+
+-- Une place reservee avec son numero et son type ; prix = prix paye (classe reservation.ReservationDetailLib)
+CREATE OR REPLACE VIEW RESERVATIONDETAIL_LIB AS
+SELECT d.id, d.idreservation, d.idplace, p.numero, t.libelle AS typeplace, d.prix
+FROM RESERVATIONDETAIL d
+JOIN PLACE p     ON p.id = d.idplace
+JOIN TYPEPLACE t ON t.id = p.idtypeplace;

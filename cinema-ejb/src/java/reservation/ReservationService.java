@@ -127,27 +127,55 @@ public class ReservationService {
      * Sert a l'affichage ; reserver() refait le calcul cote serveur.
      */
     public static double calculerMontant(String[] idPlaces, Connection c) throws Exception {
-        if (idPlaces == null || idPlaces.length == 0) return 0;
+        double total = 0;
+        for (PlaceLib p : chargerPlaces(idPlaces, c)) {
+            total += p.getPrix();
+        }
+        return total;
+    }
+
+    /**
+     * Les places choisies, avec leur type et leur prix, dans l'ordre ou elles ont ete choisies.
+     * Sert au recapitulatif avant paiement.
+     * @throws Exception si une place n'existe pas
+     */
+    public static PlaceLib[] chargerPlaces(String[] idPlaces, Connection c) throws Exception {
+        if (idPlaces == null || idPlaces.length == 0) return new PlaceLib[0];
         boolean ouvert = false;
         try {
             if (c == null) { c = new UtilDB().GetConn(); ouvert = true; }
             Object[] res = CGenUtil.rechercher(new PlaceLib(), null, null, c,
                     " and id in (" + listeSql(idPlaces) + ")");
-            Map<String, Double> prix = new HashMap<String, Double>();
+            Map<String, PlaceLib> parId = new HashMap<String, PlaceLib>();
             for (Object o : res) {
                 PlaceLib p = (PlaceLib) o;
-                prix.put(p.getId(), p.getPrix());
+                parId.put(p.getId(), p);
             }
-            double total = 0;
-            for (String id : idPlaces) {
-                Double p = prix.get(id);
-                if (p == null) throw new Exception("Place introuvable : " + id);
-                total += p;
+            PlaceLib[] places = new PlaceLib[idPlaces.length];
+            for (int i = 0; i < idPlaces.length; i++) {
+                places[i] = parId.get(idPlaces[i]);
+                if (places[i] == null) throw new Exception("Place introuvable : " + idPlaces[i]);
             }
-            return total;
+            return places;
         } finally {
             if (ouvert && c != null) c.close();
         }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  LECTURES : la fiche d'une reservation (apres paiement)
+    // ═══════════════════════════════════════════════════════════════
+
+    /** Une reservation avec les libelles du client, du film, de la salle et de la seance. */
+    public static ReservationLib chargerReservation(String idReservation, Connection c) throws Exception {
+        return (ReservationLib) CinemaUtil.parId(new ReservationLib(), idReservation, c);
+    }
+
+    /** Les places d'une reservation, avec le prix paye pour chacune. */
+    public static ReservationDetailLib[] listerLignes(String idReservation, Connection c) throws Exception {
+        Object[] res = CGenUtil.rechercher(new ReservationDetailLib(), null, null, c,
+                " and idreservation = '" + CinemaUtil.echapper(idReservation) + "' order by numero asc");
+        return (ReservationDetailLib[]) res;
     }
 
     // ═══════════════════════════════════════════════════════════════

@@ -24,6 +24,14 @@ Prix (total) [ lecture seule ]                         [ Réserver ]
 | Prix | `calculerMontant(idPlaces, c)` | `double`, le total | quand on coche ou décoche une place |
 | Réserver | `reserver(idClient, idSeance, idPlaces, u, c)` | `Reservation` créée (id, total) | au clic sur le bouton |
 
+Fonctions ajoutées pour les pages de paiement et de confirmation ([04_pages_reservation.md](04_pages_reservation.md)) :
+
+| Usage | Fonction | Renvoie |
+|---|---|---|
+| récapitulatif avant paiement | `chargerPlaces(idPlaces, c)` | `PlaceLib[]` dans l'ordre du choix (numéro, type, prix) ; `calculerMontant` l'utilise |
+| fiche après paiement | `chargerReservation(idReservation, c)` | `ReservationLib` (vue `RESERVATION_LIB` : client, film, salle, séance, total) |
+| fiche après paiement | `listerLignes(idReservation, c)` | `ReservationDetailLib[]` (vue `RESERVATIONDETAIL_LIB` : numéro, type, prix payé) |
+
 L'ordre des dépendances suit les flèches du croquis : **Film → Salle et Séance → Places → Prix → Réserver**.
 
 ## Le paramètre `Connection c`
@@ -79,7 +87,7 @@ Le service ne refait pas les contrôles : ils restent dans la classe métier, po
 
 - Le service compile avec `apj-core.jar`, en Java 8.
 - Les casts `(Client[])`, `(Film[])`… sont sûrs : `CGenUtil.rechercher` crée un tableau du type de l'objet passé (`Array.newInstance`, vu en décompilant `apj-core.jar`).
-- **Pas encore testé contre Oracle** : le compte `cinema` est vide, le script [database/01_tables_metier.sql](../../database/01_tables_metier.sql) (tables + vue `PLACE_LIB`) n'a pas encore été exécuté.
+- **Testé contre Oracle** le 10/11/2026 avec le jeu d'essai [02_donnees_test.sql](../../database/02_donnees_test.sql) : 3 clients, 3 films, salle de *Dune 3* = Salle 1, 2 séances à venir, 40 places libres, A1 + E8 = 40 000 Ar, réservation créée puis 38 places libres, même place refusée.
 
 ## Fichiers ajoutés ou modifiés
 

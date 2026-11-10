@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Construction et déploiement du cinéma (adapté du build.xml d'arbiochem).
+
+    Utilisation, depuis le dossier cinema/ :
+        JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64 ant            (= ant deploy)
+        JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64 ant compile    (vérifier que le Java compile)
+
+    Étapes : clean → init → compile → buildEjbJar → compileWar → copieProperties → deploy
+    Résultat : un WAR "éclaté" copié dans WildFly, servi à http://localhost:8080/cinema
+-->
+<project name="cinema" default="deploy" basedir="./build-file">
+
+    <!-- Le WildFly qui fait aussi tourner l'application d'origine -->
+    <property name="deploy.dir" value="/home/balou/S5/MrTahina/akoho.zip/wildfly-10.1.0.Final/standalone/deployments"/>
+    <property name="warname" value="cinema.war"/>
+    <property name="jarname" value="cinema-ejb.jar"/>
+
+    <property name="build.war" value="${basedir}/cinema_war"/>
+    <property name="build.jar" value="${basedir}/cinema_jar"/>
+    <property name="build.ear" value="${basedir}/ear"/>
+    <property name="lib.dir"   value="${basedir}/lib"/>
+
+    <property name="ejb.src"   value="../cinema-ejb/src/java"/>
+    <property name="war.src"   value="../cinema-war/src/java"/>
+    <property name="web.dir"   value="../cinema-war/web"/>
+
+    <path id="classpath">
+        <fileset dir="${lib.dir}" includes="**/*.jar"/>
+    </path>
+
+    <tstamp><format property="dateDuJour" pattern="dd/MM/yyyy HH:mm"/></tstamp>
+
+    <target name="clean">
+        <delete dir="${build.jar}"/>
+        <delete dir="${build.war}"/>
+        <delete dir="${build.ear}"/>
+    </target>
+
+    <!-- Prépare le dossier du WAR : pages web, bibliothèques, fichiers de configuration -->
+    <target name="init" depends="clean">
+        <mkdir dir="${build.war}/WEB-INF/lib"/>
+        <mkdir dir="${build.war}/WEB-INF/classes"/>
+        <mkdir dir="${build.war}/META-INF"/>
+        <mkdir dir="${build.jar}"/>
+        <mkdir dir="${build.ear}"/>
+
+        <echo file="${web.dir}/dateBuild.txt" append="false" message="${dateDuJour}"/>
+
+        <copy todir="${build.war}">
+            <fileset dir="${web.dir}" excludes="META-INF/**"/>
+        </copy>
+        <copy todir="${build.war}/META-INF">
+            <fileset dir="${web.dir}/WEB-INF/META-INF"/>
+        </copy>
+        <copy todir="${build.war}/WEB-INF/lib">
+            <fileset dir="${lib.dir}" includes="*.jar"/>
+        </copy>
+
+        <!-- apj.properties (connexion à la base) et project.properties : à la racine du jar -->
+        <copy file="${ejb.src}/apj.properties"     todir="${build.jar}"/>
+        <copy file="${ejb.src}/project.properties" todir="${build.jar}"/>
+    </target>
+
+    <!-- Compile la couche métier (cinema-ejb) -->
+    <target name="compile" depends="init">
+        <javac srcdir="${ejb.src}" destdir="${build.jar}" classpathref="classpath"
+               source="1.8" target="1.8" encoding="UTF-8"
+               nowarn="true" debug="on" deprecation="off" includeantruntime="false"/>
+    </target>
+
+    <!-- Fabrique cinema-ejb.jar et le met dans WEB-INF/lib du WAR -->
+    <target name="buildEjbJar" depends="compile">
+        <jar basedir="${build.jar}" destfile="${build.ear}/${jarname}"/>
+        <copy file="${build.ear}/${jarname}" todir="${build.war}/WEB-INF/lib"/>
+    </target>
+
+    <!-- Compile les servlets propres au cinéma (cinema-war/src/java), s'il y en a -->
+    <target name="compileWar" depends="buildEjbJar">
+        <mkdir dir="${war.src}"/>
+        <javac srcdir="${war.src}" destdir="${build.war}/WEB-INF/classes"
+               source="1.8" target="1.8" encoding="UTF-8"
+               nowarn="true" debug="on" deprecation="off" includeantruntime="false">
+            <classpath>
+                <path refid="classpath"/>
+                <pathelement location="${build.ear}/${jarname}"/>
+            </classpath>
+        </javac>
+    </target>
+
+    <!-- Les textes de l'interface (ResourceBundle "text") -->
+    <target name="copieProperties" depends="compileWar">
+        <copy todir="${build.war}/WEB-INF/classes">
+            <fileset dir="${ejb.src}/resources" includes="*.properties"/>
+        </copy>
+    </target>
+
+    <!-- Copie le WAR éclaté dans WildFly et demande son (re)déploiement -->
+    <target name="deploy" depends="copieProperties">
+        <copy todir="${deploy.dir}/${warname}">
+            <fileset dir="${build.war}"/>
+        </copy>
+        <touch file="${deploy.dir}/${warname}.dodeploy"/>
+        <echo>Déployé : ${deploy.dir}/${warname} → http://localhost:8080/cinema</echo>
+    </target>
+
+</project>

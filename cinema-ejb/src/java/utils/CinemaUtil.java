@@ -37,6 +37,28 @@ public class CinemaUtil {
     }
 
     /**
+     * Protege un texte avant de l'ecrire dans une page HTML (< > & " ').
+     * Exemple : un client nomme "<b>Rakoto" s'affiche tel quel, sans casser la page.
+     */
+    public static String html(String texte) {
+        if (texte == null) return "";
+        return texte.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+                    .replace("\"", "&quot;").replace("'", "&#39;");
+    }
+
+    /** 38000.0 -> "38 000" (separateur des milliers : espace). */
+    public static String montant(double valeur) {
+        java.text.DecimalFormatSymbols sym = new java.text.DecimalFormatSymbols();
+        sym.setGroupingSeparator(' ');
+        return new java.text.DecimalFormat("#,##0", sym).format(valeur);
+    }
+
+    /** Une date SQL en "jj/mm/aaaa" (vide si null). */
+    public static String date(java.sql.Date d) {
+        return d == null ? "" : new java.text.SimpleDateFormat("dd/MM/yyyy").format(d);
+    }
+
+    /**
      * Lit une heure "HH:mm" et renvoie le nombre de minutes depuis minuit.
      * Exemple : "18:30" -> 1110.
      *
