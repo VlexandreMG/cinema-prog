@@ -212,7 +212,50 @@ public ClassMAPTable createObject(String u, Connection c) throws Exception {
 
 Les trois noms doivent correspondre : `setNomClasseFille` ↔ nom de la classe fille, `setLiaisonFille` ↔ `setLiaisonMere` ↔ la colonne dans la table des lignes.
 
-## 7. Vérifier que ça compile
+## 7. Écrire une fonction métier (un service)
+
+Les classes décrivent les tables. Les fonctions dont l'écran a besoin (« lister les séances d'un film », « réserver ») vont dans une classe de service, par exemple [ReservationService.java](../../cinema-ejb/src/java/reservation/ReservationService.java).
+
+Le modèle du socle : la fonction reçoit une `Connection c`, et ouvre la sienne si `c` est `null`.
+
+```java
+// Une LECTURE
+public static Seance[] listerSeances(String idFilm, Connection c) throws Exception {
+    boolean ouvert = false;
+    try {
+        if (c == null) { c = new UtilDB().GetConn(); ouvert = true; }
+        Object[] res = CGenUtil.rechercher(new Seance(), null, null, c,
+                " and idfilm = '" + CinemaUtil.echapper(idFilm) + "' order by daty asc");
+        return (Seance[]) res;          // sûr : APJ crée un tableau du bon type
+    } finally {
+        if (ouvert && c != null) c.close();   // je ferme seulement ce que j'ai ouvert
+    }
+}
+
+// Une ÉCRITURE : en plus, commit / rollback si c'est moi qui ai ouvert
+public static Reservation reserver(..., String u, Connection c) throws Exception {
+    boolean ouvert = false;
+    try {
+        if (c == null) { c = new UtilDB().GetConn(); c.setAutoCommit(false); ouvert = true; }
+        Reservation r = new Reservation();
+        // ... remplir r, puis r.setFille(lignes) ...
+        r.createObject(u, c);           // les contrôles sont dans la classe, pas ici
+        if (ouvert) c.commit();
+        return r;
+    } catch (Exception e) {
+        if (ouvert && c != null) c.rollback();
+        throw e;
+    } finally {
+        if (ouvert && c != null) c.close();
+    }
+}
+```
+
+- **Les contrôles restent dans `createObject`** : ils s'appliquent ainsi quel que soit le chemin (service ou moteur APJ).
+- Le filtre peut se terminer par `order by …` : APJ le colle à la fin de `select * from TABLE where … `.
+- Pour afficher des libellés (nom de la salle, prix du type), on fait une **vue `_LIB`** et une classe qui la lit (ex. `PLACE_LIB` → `PlaceLib`).
+
+## 8. Vérifier que ça compile
 
 Tant que le `build.xml` du cinéma n'est pas prêt (étape 1), on peut compiler à la main, en Java 8 comme WildFly 10 :
 
@@ -224,7 +267,7 @@ javac --release 8 -encoding UTF-8 \
 ```
 Pas de message d'erreur = c'est bon. Ensuite, quand le build sera prêt : `ant deploy`.
 
-## 8. Checklist pour une nouvelle table
+## 9. Checklist pour une nouvelle table
 
 1. ☐ Table Oracle (`id VARCHAR2` + colonnes en minuscules)
 2. ☐ Séquence `SEQ_X` + **fonction** `GETSEQX`
@@ -236,7 +279,7 @@ Pas de message d'erreur = c'est bon. Ensuite, quand le build sera prêt : `ant d
 8. ☐ Contrôles dans `createObject`, terminés par `return super.createObject(u, c);`
 9. ☐ Ajouter la table au script `database/` et compiler
 
-## 9. Les erreurs fréquentes
+## 10. Les erreurs fréquentes
 
 | Symptôme | Cause | Solution |
 |---|---|---|

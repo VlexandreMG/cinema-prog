@@ -106,3 +106,13 @@ BEGIN SELECT SEQ_RESERVATIONDETAIL.NEXTVAL INTO r FROM DUAL; RETURN r; END;
 /
 
 COMMIT;
+
+-- ---------- Vues (lecture pour les ecrans) ----------
+
+-- Une place avec le nom de sa salle, son type et son prix (classe salle.PlaceLib)
+CREATE OR REPLACE VIEW PLACE_LIB AS
+SELECT p.id, p.idsalle, s.nom AS salle, p.numero,
+       p.idtypeplace, t.libelle AS typeplace, t.prix
+FROM PLACE p
+JOIN SALLE s     ON s.id = p.idsalle
+JOIN TYPEPLACE t ON t.id = p.idtypeplace;

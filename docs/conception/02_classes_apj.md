@@ -29,6 +29,8 @@ Lire `A 1 ──── * B` : un A a plusieurs B, un B a un seul A. La clé étr
 | [client/Client.java](../../cinema-ejb/src/java/client/Client.java) | `ClassMAPTable` | CLIENT | `CLI` |
 | [reservation/Reservation.java](../../cinema-ejb/src/java/reservation/Reservation.java) | `ClassMere` | RESERVATION | `RSV` |
 | [reservation/ReservationDetail.java](../../cinema-ejb/src/java/reservation/ReservationDetail.java) | `ClassFille` | RESERVATIONDETAIL | `RSD` |
+| [salle/PlaceLib.java](../../cinema-ejb/src/java/salle/PlaceLib.java) | `ClassMAPTable` (lecture seule) | vue PLACE_LIB | — |
+| [reservation/ReservationService.java](../../cinema-ejb/src/java/reservation/ReservationService.java) | — | — | les fonctions de l'écran, voir [03_fonctions_metier.md](03_fonctions_metier.md) |
 | [utils/CinemaUtil.java](../../cinema-ejb/src/java/utils/CinemaUtil.java) | — | — | outils communs |
 | [database/01_tables_metier.sql](../../database/01_tables_metier.sql) | — | toutes | tables, séquences, fonctions `GETSEQ…` |
 
