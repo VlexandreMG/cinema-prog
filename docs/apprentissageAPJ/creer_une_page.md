@@ -157,7 +157,7 @@ D'autres réglages de la fiche : `pc.setOrdre(new String[]{"id","client",…})` 
 
 ## 6. Le modèle FORMULAIRE écrit à la main (saisie + service)
 
-C'est le modèle des pages de réservation ([04_pages_reservation.md](../conception/04_pages_reservation.md)). Il a trois pages :
+C'est le modèle des pages de réservation ([04_pages_reservation.md](../conception/04_pages_reservation.md)). Listes déroulantes, lecture seule et champs cachés, en détail : [dropdown_readonly.md](dropdown_readonly.md). Il a trois pages :
 
 ```
 -saisie.jsp  ── GET (se recharge à chaque choix) ──► -paiement.jsp ── POST acte=payer ──► service ──► -fiche.jsp
