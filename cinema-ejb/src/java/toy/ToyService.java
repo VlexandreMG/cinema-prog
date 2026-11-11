@@ -1,5 +1,6 @@
 package toy;
 
+import toy.Toy;
 import bean.CGenUtil;
 import pop.Popcorn;
 import jouet.Jouet;
@@ -86,29 +87,29 @@ public class ToyService {
         }
     }    
 
-    public static double calculerMontant(String[] idElements, Connection c) throws Exception {
+    public static double calculerMontant(String[] idJouets, Connection c) throws Exception {
     double total = 0;
-    for (JouetLib e : chargerElements(idElements, c)) {   // chaque élément avec le prix de son type
+    for (JouetLib e : chargerElements(idJouets, c)) {   // chaque élément avec le prix de son type
         total += e.getPrix();
     }
     return total;
     }
 
-    public static Achat acheter(String idClient, String idConteneur, String[] idElements,
+    public static Toy creerToy(String idClient, String idPopcorn, String[] idJouets,
                             String u, Connection c) throws Exception {
     boolean ouvert = false;
     try {
         if (c == null) { c = new UtilDB().GetConn(); c.setAutoCommit(false); ouvert = true; }
-        if (idElements == null || idElements.length == 0) throw new Exception("Choisissez au moins un élément.");
+        if (idJouets == null || idJouets.length == 0) throw new Exception("Choisissez au moins un élément.");
 
-        Achat a = new Achat();                         // 1. la mère : seulement les choix de l'écran
+        Toy a = new Toy();                         // 1. la mère : seulement les choix de l'écran
         a.setIdclient(idClient);
-        a.setIdconteneur(idConteneur);
+        a.setIdpopcorn(idPopcorn);
 
-        ClassFille[] lignes = new ClassFille[idElements.length];
-        for (int i = 0; i < idElements.length; i++) {  // 2. une ligne par élément choisi
-            AchatDetail d = new AchatDetail();         //    ni id, ni liaison, ni prix
-            d.setIdelement(idElements[i]);
+        ClassFille[] lignes = new ClassFille[idJouets.length];
+        for (int i = 0; i < idJouets.length; i++) {  // 2. une ligne par élément choisi
+            ToyDetail d = new ToyDetail();         //    ni id, ni liaison, ni prix
+            d.setIdelement(idJouets[i]);
             lignes[i] = d;
         }
         a.setFille(lignes);                            // 3. attacher
