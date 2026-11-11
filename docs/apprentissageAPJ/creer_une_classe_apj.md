@@ -91,6 +91,8 @@ public class Film extends ClassMAPTable {
 
 Les 5 morceaux sont **obligatoires**. `getTuppleID` et `getAttributIDName` sont abstraites dans `ClassMAPTable` : sans elles, la classe ne compile pas.
 
+⚠ **Le nom des getters / setters est imposé** : `get` + l'attribut avec seulement sa **première lettre** en majuscule. `nom` → `getNom()`, `idclient` → `getIdclient()` (pas `getIdClient()`). Un getter mal nommé compile, mais APJ ne le trouve pas et la valeur reste vide. Toutes les règles de nommage : [conventions_apj.md](conventions_apj.md).
+
 ### Les types d'attributs autorisés
 
 | Colonne Oracle | Type Java |
@@ -265,15 +267,15 @@ public static Reservation reserver(..., String u, Connection c) throws Exception
 
 ## 8. Vérifier que ça compile
 
-Tant que le `build.xml` du cinéma n'est pas prêt (étape 1), on peut compiler à la main, en Java 8 comme WildFly 10 :
+**Après CHAQUE fichier**, pas à la fin :
 
 ```bash
-cd /home/balou/S5/MrTahina/cinema/cinema-ejb/src/java
-javac --release 8 -encoding UTF-8 \
-  -cp /home/balou/S5/MrTahina/apj/apj-core.jar:/home/balou/S5/MrTahina/apj/apj-core2.jar \
-  -d /tmp/cinema-build $(find utils salle film client reservation -name "*.java")
+cd /home/balou/S5/MrTahina/cinema
+JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64 ant compile
 ```
-Pas de message d'erreur = c'est bon. Ensuite, quand le build sera prêt : `ant deploy`.
+`BUILD SUCCESSFUL` en 2 secondes = c'est bon. Sinon, l'erreur donne le fichier et la ligne. Pour déployer : `ant` (sans argument).
+
+⚠ Si un seul fichier ne compile pas, **tout** le projet ne peut plus être déployé, y compris les modules qui marchaient. Après un copier-coller depuis un modèle, voir aussi la checklist de [conventions_apj.md](conventions_apj.md) §10.
 
 ## 9. Checklist pour une nouvelle table
 

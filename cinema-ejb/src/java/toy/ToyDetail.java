@@ -22,7 +22,7 @@ public class ToyDetail extends ClassFille {
     @Override public String getTuppleID()       { return id; }
     @Override public String getAttributIDName() { return "id"; }
     @Override public String getNomClasseMere()  { return "toy.Toy"; }
-    @Override public String getLiaisonMere()    { return "idreservation"; }
+    @Override public String getLiaisonMere()    { return "idtoy"; }
 
     // getters / setters de chaque attribut
      public String getId() { return id; }

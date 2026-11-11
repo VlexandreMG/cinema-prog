@@ -17,7 +17,7 @@ public class Popcorn extends ClassMAPTable {
     // ③ La clé : préfixe + fonction Oracle
     @Override
     public void construirePK(Connection c) throws Exception {
-        this.preparePk("POP", "GETSEQPOP");   // -> FLM000001, FLM000002...
+        this.preparePk("POP", "GETSEQPOP");   // -> POP000001, POP000002...
         this.setId(makePK(c));
     }
 
@@ -28,6 +28,6 @@ public class Popcorn extends ClassMAPTable {
     // ⑤ Getters / setters pour CHAQUE attribut
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
-    public String getnom() { return nom; }
-    public void setnom(String nom) { this.nom = nom; }
+    public String getNom() { return nom; }
+    public void setNom(String nom) { this.nom = nom; }
 }

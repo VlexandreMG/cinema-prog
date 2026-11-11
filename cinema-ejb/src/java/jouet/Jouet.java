@@ -7,7 +7,7 @@ public class Jouet extends ClassMAPTable {
 
     // ① Un attribut par colonne, même nom
     private String id;
-    private String libelle;
+    private String lib;            // meme nom que la colonne JOUET.lib
     private String idpopcorn;
     private String idtypejouet;
 
@@ -19,7 +19,7 @@ public class Jouet extends ClassMAPTable {
     // ③ La clé : préfixe + fonction Oracle
     @Override
     public void construirePK(Connection c) throws Exception {
-        this.preparePk("JOT", "GETSEQJOUET");   // -> FLM000001, FLM000002...
+        this.preparePk("JOT", "GETSEQJOUET");   // -> JOT000001, JOT000002...
         this.setId(makePK(c));
     }
 
@@ -30,8 +30,8 @@ public class Jouet extends ClassMAPTable {
     // ⑤ Getters / setters pour CHAQUE attribut
     public String getId() { return id; }
     public void setId(String id) { this.id = id; }
-    public String getLibelle() { return libelle; }
-    public void setLibelle(String libelle) { this.libelle = libelle; }
+    public String getLib() { return lib; }
+    public void setLib(String lib) { this.lib = lib; }
     public String getIdpopcorn() { return idpopcorn; }
     public void setIdpopcorn(String idpopcorn) { this.idpopcorn = idpopcorn; }
     public String getIdtypejouet() { return idtypejouet; }

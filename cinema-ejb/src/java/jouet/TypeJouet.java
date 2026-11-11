@@ -18,7 +18,7 @@ public class TypeJouet extends ClassMAPTable {
     // ③ La clé : préfixe + fonction Oracle
     @Override
     public void construirePK(Connection c) throws Exception {
-        this.preparePk("TPJ", "GETSEQTYPEJOUET");   // -> FLM000001, FLM000002...
+        this.preparePk("TPJ", "GETSEQTYPEJOUET");   // -> TPJ000001, TPJ000002...
         this.setId(makePK(c));
     }
 
