@@ -41,6 +41,8 @@ BEGIN SELECT SEQ_FILM.NEXTVAL INTO r FROM DUAL; RETURN r; END;
 - **La fonction est obligatoire.** APJ appelle `GETSEQFILM`, pas la séquence directement. Sans elle : `ORA-00904 "GETSEQFILM"`.
 - **Noms de colonnes en minuscules et collés** (`idsalle`), identiques aux attributs Java.
 
+Tout sur les séquences (comment APJ fabrique l'id, les trous, les erreurs, remettre une séquence en avance) : [creer_une_sequence.md](creer_une_sequence.md).
+
 ## 3. Écrire la classe
 
 Fichier `cinema-ejb/src/java/film/Film.java`. Le dossier = le `package`.
