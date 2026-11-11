@@ -222,6 +222,8 @@ Tout sur les mères et les filles (quand en faire, lignes en mémoire / en base,
 
 Les classes décrivent les tables. Les fonctions dont l'écran a besoin (« lister les séances d'un film », « réserver ») vont dans une classe de service, par exemple [ReservationService.java](../../cinema-ejb/src/java/reservation/ReservationService.java).
 
+Le mindset et la stratégie complète (lister, charger par id, disponibles, montant, enregistrer mère + lignes, tester sans page) : [fonctions_metier.md](fonctions_metier.md).
+
 Le modèle du socle : la fonction reçoit une `Connection c`, et ouvre la sienne si `c` est `null`.
 
 ```java
