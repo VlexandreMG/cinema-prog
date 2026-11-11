@@ -198,8 +198,10 @@ JOIN PLACE p     ON p.id = d.idplace
 JOIN TYPEPLACE t ON t.id = p.idtypeplace;
 
 -- Une vue qui permet de relier la jouet avec son prix 
-CREATE OR REPLACE VIEW JOUET_LIB AS 
-SELECT j.id , j.lib , p.nom , tj.prix AS prix
+-- Un jouet avec son paquet et son type (classe jouet.JouetLib) :
+-- idpopcorn sert a filtrer "les jouets de CE paquet", typejouet et prix a les afficher.
+CREATE OR REPLACE VIEW JOUET_LIB AS
+SELECT j.id, j.lib, j.idpopcorn, p.nom, j.idtypejouet, tj.lib AS typejouet, tj.prix AS prix
 FROM JOUET j
 JOIN TYPEJOUET tj ON tj.id = j.idtypejouet
 JOIN POPCORN p ON p.id = j.idpopcorn;

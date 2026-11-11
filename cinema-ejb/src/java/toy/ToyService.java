@@ -40,6 +40,28 @@ public class ToyService {
         }
     }
 
+    /**
+     * Les jouets ENCORE DISPONIBLES d'un paquet, avec leur type et leur prix (vue JOUET_LIB).
+     * Disponible = pas dans une vente non annulée (etat <> 0). Un jouet vendu l'est pour toujours :
+     * pas de condition de séance, contrairement à listerPlacesLibres.
+     */
+    public static JouetLib[] listerJouetsDisponibles(String idPopcorn, Connection c) throws Exception {
+        boolean ouvert = false;
+        try {
+            if (c == null) { c = new UtilDB().GetConn(); ouvert = true; }
+            String filtre = " and idpopcorn = '" + CinemaUtil.echapper(idPopcorn) + "'"
+                    + " and id not in ("
+                    + "   select d.idjouet from TOYDETAIL d"
+                    + "   join TOY t on t.id = d.idtoy"
+                    + "   where t.etat <> 0)"
+                    + " order by lib asc";
+            Object[] res = CGenUtil.rechercher(new JouetLib(), null, null, c, filtre);
+            return (JouetLib[]) res;
+        } finally {
+            if (ouvert && c != null) c.close();
+        }
+    }
+
     /** {"A","B"} -> 'A','B' (valeurs échappées), pour un "in (...)". */
     private static String listeSql(String[] valeurs) {
         StringBuilder sb = new StringBuilder();
@@ -111,7 +133,7 @@ public class ToyService {
         ClassFille[] lignes = new ClassFille[idJouets.length];
         for (int i = 0; i < idJouets.length; i++) {  // 2. une ligne par élément choisi
             ToyDetail d = new ToyDetail();         //    ni id, ni liaison, ni prix
-            d.setId(idJouets[i]);
+            d.setIdjouet(idJouets[i]);             //    le JOUET choisi (pas l'id de la ligne : APJ le fabrique)
             lignes[i] = d;
         }
         a.setFille(lignes);                            // 3. attacher

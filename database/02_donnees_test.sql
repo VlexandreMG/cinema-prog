@@ -1,3 +1,4 @@
+-- Active: 1794266528165@@@443@EE@CINEMA
 -- ============================================================
 -- Cinema : jeu de donnees de test (apres 00_socle.sql et 01_tables_metier.sql)
 -- Les ids passent par les fonctions GETSEQxxx, pour que les prochaines
@@ -63,6 +64,39 @@ BEGIN
     INSERT INTO CLIENT (id, nom, contact) VALUES ('CLI' || LPAD(GETSEQCLIENT, 6, '0'), 'Rakoto Jean', '034 11 222 33');
     INSERT INTO CLIENT (id, nom, contact) VALUES ('CLI' || LPAD(GETSEQCLIENT, 6, '0'), 'Rasoa Marie', '032 44 555 66');
     INSERT INTO CLIENT (id, nom, contact) VALUES ('CLI' || LPAD(GETSEQCLIENT, 6, '0'), 'Randria Paul', '033 77 888 99');
+
+    COMMIT;
+END;
+/
+
+-- ============================================================
+-- Popcorn : 2 paquets, 2 types de jouet, 6 jouets
+-- (a executer une seule fois ; les ids passent par les fonctions GETSEQxxx)
+-- ============================================================
+DECLARE
+    v_classique VARCHAR2(100) := 'TPJ' || LPAD(GETSEQTYPEJOUET, 6, '0');
+    v_collector VARCHAR2(100) := 'TPJ' || LPAD(GETSEQTYPEJOUET, 6, '0');
+    v_caramel   VARCHAR2(100) := 'POP' || LPAD(GETSEQPOP, 6, '0');
+    v_sale      VARCHAR2(100) := 'POP' || LPAD(GETSEQPOP, 6, '0');
+
+    PROCEDURE jouet(p_lib VARCHAR2, p_popcorn VARCHAR2, p_type VARCHAR2) IS
+    BEGIN
+        INSERT INTO JOUET (id, lib, idpopcorn, idtypejouet)
+        VALUES ('JOT' || LPAD(GETSEQJOUET, 6, '0'), p_lib, p_popcorn, p_type);
+    END;
+BEGIN
+    INSERT INTO TYPEJOUET (id, lib, prix) VALUES (v_classique, 'Classique', 2000);
+    INSERT INTO TYPEJOUET (id, lib, prix) VALUES (v_collector, 'Collector', 5000);
+
+    INSERT INTO POPCORN (id, nom) VALUES (v_caramel, 'Grand caramel');
+    INSERT INTO POPCORN (id, nom) VALUES (v_sale,    'Petit sale');
+
+    jouet('Mini Groot',     v_caramel, v_collector);
+    jouet('Toupie',         v_caramel, v_classique);
+    jouet('Yoyo',           v_caramel, v_classique);
+    jouet('Figurine Dune',  v_caramel, v_collector);
+    jouet('Sifflet',        v_sale,    v_classique);
+    jouet('Porte-cle Coco', v_sale,    v_collector);
 
     COMMIT;
 END;
