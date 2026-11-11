@@ -135,6 +135,8 @@ public ClassMAPTable createObject(String u, Connection c) throws Exception {
 
 **N'oublie pas `return super.createObject(u, c);`** à la fin, sinon rien n'est enregistré.
 
+Ce que fait `createObject` étape par étape, qui l'appelle, et ses pièges (lignes d'une mère, `etat`, transaction) : [createObject.md](createObject.md).
+
 ## 5. Lire d'autres tables dans un contrôle
 
 ```java
@@ -213,6 +215,8 @@ public ClassMAPTable createObject(String u, Connection c) throws Exception {
 ```
 
 Les trois noms doivent correspondre : `setNomClasseFille` ↔ nom de la classe fille, `setLiaisonFille` ↔ `setLiaisonMere` ↔ la colonne dans la table des lignes.
+
+Tout sur les mères et les filles (quand en faire, lignes en mémoire / en base, où contrôler, validation, et pourquoi le cinéma passe par un service plutôt que par `apresMultiple.jsp`) : [classes_mere_fille.md](classes_mere_fille.md).
 
 ## 7. Écrire une fonction métier (un service)
 
