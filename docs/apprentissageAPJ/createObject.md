@@ -115,6 +115,113 @@ Exemple réel, la structure de `Reservation.createObject` :
 | **Calculer / compléter** | pour chaque ligne, le **prix recopié** depuis le type ; puis `daty` = aujourd'hui, `montanttotal` = somme, `etat` = 11 (validée) |
 | **Enregistrer** | `return super.createObject(u, c);` → la réservation, puis ses lignes |
 
+### 4.1 Exemple complet n°1 : une table simple (`Film`)
+
+Le cas le plus court : on contrôle les champs, puis on enregistre. Code réel de [film/Film.java](../../cinema-ejb/src/java/film/Film.java) :
+
+```java
+@Override
+public ClassMAPTable createObject(String u, Connection c) throws Exception {
+    // 1. CONTRÔLER les champs saisis
+    if (titre == null || titre.trim().isEmpty()) {
+        throw new Exception("Le titre du film est obligatoire.");
+    }
+    if (duree <= 0) {
+        throw new Exception("La durée du film doit être supérieure à 0 minute.");
+    }
+    // 1 bis. CONTRÔLER les liens : la salle doit exister (sinon "Salle introuvable : …")
+    CinemaUtil.parId(new Salle(), idsalle, c);
+
+    // 3. ENREGISTRER (pas de calcul ici : rien à compléter)
+    return super.createObject(u, c);
+}
+```
+
+### 4.2 Exemple complet n°2 : une mère avec ses lignes (`Reservation`)
+
+Code réel de [reservation/Reservation.java](../../cinema-ejb/src/java/reservation/Reservation.java), découpé en étapes numérotées. C'est le modèle à suivre pour toute vente ou achat avec des lignes.
+
+```java
+@Override
+public ClassMAPTable createObject(String u, Connection c) throws Exception {
+
+    // ── ① CHARGER ce dont on a besoin (et vérifier que ça existe) ──────────────
+    CinemaUtil.parId(new Client(), idclient, c);                        // le client existe
+    Seance seance = (Seance) CinemaUtil.parId(new Seance(), idseance, c);
+    // Verrou : deux guichets sur la même séance → le second attend la fin du premier
+    CGenUtil.rechercherSimple("select id from SEANCE where id = '"
+            + CinemaUtil.echapper(idseance) + "' for update", c);
+    Film film = (Film) CinemaUtil.parId(new Film(), seance.getIdfilm(), c);
+
+    // ── ② RÈGLES SUR LE DOCUMENT ──────────────────────────────────────────────
+    if (seance.calculerDebut() < System.currentTimeMillis()) {
+        throw new Exception("La séance " + seance.getId() + " a déjà commencé : réservation impossible.");
+    }
+
+    // ── ③ AU MOINS UNE LIGNE ──────────────────────────────────────────────────
+    ReservationDetail[] lignes = (ReservationDetail[]) this.getFille();   // les lignes attachées par setFille
+    if (lignes == null || lignes.length == 0) {
+        throw new Exception("Choisissez au moins une place.");
+    }
+
+    // ── ④ POUR CHAQUE LIGNE : règles + prix recopié ───────────────────────────
+    double total = 0;
+    Set<String> dejaChoisies = new HashSet<String>();
+    for (ReservationDetail ligne : lignes) {
+        Place place = (Place) CinemaUtil.parId(new Place(), ligne.getIdplace(), c);
+
+        if (!dejaChoisies.add(place.getId())) {                          // pas deux fois la même
+            throw new Exception("La place " + place.getNumero() + " est choisie deux fois.");
+        }
+        if (!place.getIdsalle().equals(film.getIdsalle())) {             // le bon parent
+            throw new Exception("La place " + place.getNumero() + " n'est pas dans la salle du film.");
+        }
+        if (estReservee(place.getId(), seance.getId(), c)) {             // encore disponible
+            throw new Exception("La place " + place.getNumero() + " est déjà réservée pour cette séance.");
+        }
+
+        // Le prix vient du TYPE, lu en base (jamais de l'écran), et il est RECOPIÉ dans la ligne
+        TypePlace type = (TypePlace) CinemaUtil.parId(new TypePlace(), place.getIdtypeplace(), c);
+        ligne.setPrix(type.getPrix());
+        total += type.getPrix();
+    }
+
+    // ── ⑤ COMPLÉTER LA MÈRE ───────────────────────────────────────────────────
+    this.setDaty(Utilitaire.dateDuJourSql());                // date du jour
+    this.setEtat(ConstanteEtat.getEtatValider());            // payée → VALIDÉE (sinon etat = 0 = annulée)
+    this.setMontanttotal(total);                             // total = somme des lignes
+
+    // ── ⑥ ENREGISTRER : la mère, puis ses lignes, dans la même transaction ─────
+    return super.createObject(u, c);
+}
+
+/** « Disponible » se déduit des lignes déjà enregistrées : un count sur les ventes non annulées. */
+public static boolean estReservee(String idplace, String idseance, Connection c) throws Exception {
+    String sql = "select count(*) from RESERVATIONDETAIL d"
+            + " join RESERVATION r on r.id = d.idreservation"
+            + " where d.idplace = '" + CinemaUtil.echapper(idplace) + "'"
+            + " and r.idseance = '" + CinemaUtil.echapper(idseance) + "'"
+            + " and r.etat <> 0";
+    Object o = CGenUtil.rechercherSimple(sql, c);
+    return (o instanceof Number) && ((Number) o).intValue() > 0;
+}
+```
+
+**Les imports** dont ce `createObject` a besoin : `bean.CGenUtil`, `bean.ClassMAPTable`, `constante.ConstanteEtat`, `utilitaire.Utilitaire`, `utils.CinemaUtil`, `java.sql.Connection`, `java.util.HashSet`, `java.util.Set`, plus les classes chargées (`Client`, `Seance`, `Film`, `Place`, `TypePlace`).
+
+**Comment l'adapter à ton module.** Garde les six étapes, change le contenu :
+
+| Étape | Question à te poser pour ton module |
+|---|---|
+| ① charger | quels objets ma mère référence-t-elle (client, parent…) ? Faut-il un verrou sur le parent ? |
+| ② règles du document | y a-t-il une condition sur le document lui-même (date, parent encore ouvert…) ? Sinon, étape vide. |
+| ③ au moins une ligne | identique, change seulement le message |
+| ④ chaque ligne | quel est le « bon parent » d'un élément ? Comment savoir s'il est déjà pris (quelle table, quelle condition) ? Où est son prix ? |
+| ⑤ compléter | date, état, total : les mêmes trois lignes |
+| ⑥ enregistrer | identique |
+
+Et `estReservee` devient « est-ce que CET élément est déjà dans une vente non annulée ? ». Si l'élément est pris pour toujours (pas de notion de séance), la condition sur la séance disparaît.
+
 ## 5. Avant ou après `super.createObject` ?
 
 | Je veux… | Où | Pourquoi |
