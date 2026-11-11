@@ -94,6 +94,35 @@ public class ToyService {
     return total;
     }
 
-    
+    public static Achat acheter(String idClient, String idConteneur, String[] idElements,
+                            String u, Connection c) throws Exception {
+    boolean ouvert = false;
+    try {
+        if (c == null) { c = new UtilDB().GetConn(); c.setAutoCommit(false); ouvert = true; }
+        if (idElements == null || idElements.length == 0) throw new Exception("Choisissez au moins un élément.");
+
+        Achat a = new Achat();                         // 1. la mère : seulement les choix de l'écran
+        a.setIdclient(idClient);
+        a.setIdconteneur(idConteneur);
+
+        ClassFille[] lignes = new ClassFille[idElements.length];
+        for (int i = 0; i < idElements.length; i++) {  // 2. une ligne par élément choisi
+            AchatDetail d = new AchatDetail();         //    ni id, ni liaison, ni prix
+            d.setIdelement(idElements[i]);
+            lignes[i] = d;
+        }
+        a.setFille(lignes);                            // 3. attacher
+
+        a.createObject(u, c);                          // 4. TOUTES les règles + INSERT mère puis lignes
+
+        if (ouvert) c.commit();
+        return a;
+    } catch (Exception e) {
+        if (ouvert && c != null) c.rollback();
+        throw e;
+    } finally {
+        if (ouvert && c != null) c.close();
+    }
+}
 
 }
