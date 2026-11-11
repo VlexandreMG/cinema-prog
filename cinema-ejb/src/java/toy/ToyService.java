@@ -33,6 +33,49 @@ public class ToyService {
         if (ouvert && c != null) c.close();
     }
 
-    
+    /** {"A","B"} -> 'A','B' (valeurs échappées), pour un "in (...)". */
+    private static String listeSql(String[] valeurs) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < valeurs.length; i++) {
+            if (i > 0) sb.append(",");
+            sb.append("'").append(CinemaUtil.echapper(valeurs[i])).append("'");
+        }
+        return sb.toString();
+    }
+
+
+    /**
+ * Les éléments choisis, avec leur type et leur prix (vue ELEMENT_LIB), dans l'ordre du choix.
+ * @throws Exception si un id n'existe pas
+ */
+public static ElementLib[] chargerElements(String[] idElements, Connection c) throws Exception {
+    if (idElements == null || idElements.length == 0) return new ElementLib[0];   // ①
+    boolean ouvert = false;
+    try {
+        if (c == null) { c = new UtilDB().GetConn(); ouvert = true; }
+
+        // ② UNE seule requête pour tous les ids : ... where id in ('ELT000003','ELT000007')
+        Object[] res = CGenUtil.rechercher(new ElementLib(), null, null, c,
+                " and id in (" + listeSql(idElements) + ")");
+
+        // ③ Ranger le résultat par id, pour le retrouver vite
+        Map<String, ElementLib> parId = new HashMap<String, ElementLib>();
+        for (Object o : res) {
+            ElementLib e = (ElementLib) o;
+            parId.put(e.getId(), e);
+        }
+
+        // ④ Remettre dans l'ORDRE DU CHOIX, et refuser un id inconnu
+        ElementLib[] elements = new ElementLib[idElements.length];
+        for (int i = 0; i < idElements.length; i++) {
+            elements[i] = parId.get(idElements[i]);
+            if (elements[i] == null) throw new Exception("Élément introuvable : " + idElements[i]);
+        }
+        return elements;
+    } finally {
+        if (ouvert && c != null) c.close();
+    }
+}
+
 }
 }

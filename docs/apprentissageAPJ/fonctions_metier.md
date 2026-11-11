@@ -249,6 +249,32 @@ private static String listeSql(String[] valeurs) {
 
 Chaque valeur passe par `CinemaUtil.echapper` : un id contenant une apostrophe ne peut pas casser la requête.
 
+#### Comment marche `listeSql`
+
+**Son rôle :** en SQL, `in (...)` attend une liste de textes **entre apostrophes, séparés par des virgules** : `id in ('PLC000002','PLC000041')`. L'écran, lui, envoie un tableau Java : `{"PLC000002", "PLC000041"}`. `listeSql` fait la traduction entre les deux.
+
+**Pas à pas,** avec `valeurs = {"PLC000002", "PLC000041", "PLC000007"}` :
+
+| Tour | `i` | `if (i > 0)` : virgule ? | ajouté | `sb` après le tour |
+|---|---|---|---|---|
+| 1 | 0 | non (premier élément) | `'PLC000002'` | `'PLC000002'` |
+| 2 | 1 | oui | `,'PLC000041'` | `'PLC000002','PLC000041'` |
+| 3 | 2 | oui | `,'PLC000007'` | `'PLC000002','PLC000041','PLC000007'` |
+
+Résultat : `'PLC000002','PLC000041','PLC000007'`, que `chargerPlaces` colle entre les parenthèses :
+```sql
+select * from PLACE_LIB where 1<2  and id in ('PLC000002','PLC000041','PLC000007')
+```
+
+**Les trois idées :**
+- **`StringBuilder`** : on construit le texte morceau par morceau (`append`), sans recréer une chaîne à chaque `+`.
+- **`if (i > 0)`** : la virgule est mise **avant** chaque élément, sauf le premier. On évite ainsi une virgule en trop au début ou à la fin (`in ('A','B',)` serait une erreur SQL).
+- **`echapper` puis les apostrophes** : `'` + valeur échappée + `'`. Si une valeur contenait `O'Neil`, elle deviendrait `'O''Neil'` (l'apostrophe doublée est la façon SQL d'écrire une apostrophe dans un texte), au lieu de fermer le texte trop tôt.
+
+**Attention :**
+- avec un tableau **vide**, `listeSql` renvoie `""`, et `in ()` est une erreur SQL. C'est pour ça que `chargerPlaces` (étape ①) s'arrête **avant** si la liste est vide ;
+- Oracle limite un `in (...)` à **1000 valeurs**, ce qui est largement suffisant pour des éléments cochés à l'écran.
+
 ### 6.3 Côté classe mère : le vrai calcul
 Dans `createObject` de la mère, **avant `super`** :
 ```java
