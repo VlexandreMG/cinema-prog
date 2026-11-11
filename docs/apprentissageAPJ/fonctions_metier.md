@@ -2,7 +2,17 @@
 
 Ce tuto explique **comment penser et écrire les fonctions d'un écran** : lister, charger par id, lister ce qui dépend d'un choix, lister ce qui est encore disponible, calculer un montant, et enregistrer un document avec ses lignes.
 
-Les exemples réels viennent de [ReservationService.java](../../cinema-ejb/src/java/reservation/ReservationService.java) (scénario 1). Les modèles à copier utilisent des noms neutres : `Conteneur` (un objet qui contient des éléments), `Element`, `TypeElement`, `Achat` (la mère) et `AchatDetail` (la fille). Remplace-les par tes propres classes.
+Les exemples réels viennent de [ReservationService.java](../../cinema-ejb/src/java/reservation/ReservationService.java) (scénario 1). Les modèles à copier utilisent des noms neutres : `Conteneur` (un objet qui contient des éléments), `Element`, `ElementLib`, `TypeElement`, `Achat` (la mère) et `AchatDetail` (la fille). Remplace-les par tes propres classes.
+
+> ⚠ **Ces noms neutres n'existent pas dans le projet.** `Conteneur`, `Element`, `Achat`, `MonService`, et les fonctions `chargerElements`, `listerDisponibles`, `acheter`… sont des **modèles à écrire toi-même**. Chacun est calqué sur une vraie fonction du scénario 1, indiquée à côté. Si tu cherches un nom dans le code et que tu ne le trouves pas, c'est normal : cherche sa fonction modèle.
+
+| Nom neutre (à écrire) | Calqué sur (existe dans `ReservationService`) |
+|---|---|
+| `listerConteneurs` | `listerFilms`, `listerClients` |
+| `listerDisponibles(idConteneur)` | `listerPlacesLibres(idSeance)` |
+| `chargerElements(idElements)` | `chargerPlaces(idPlaces)` (voir §6.2) |
+| `calculerMontant(idElements)` | `calculerMontant(idPlaces)` |
+| `acheter(...)` | `reserver(...)` |
 
 Prérequis : [creer_une_classe_apj.md](creer_une_classe_apj.md), [createObject.md](createObject.md), [classes_mere_fille.md](classes_mere_fille.md).
 
@@ -165,9 +175,81 @@ public static double calculerMontant(String[] idElements, Connection c) throws E
     return total;
 }
 ```
-`chargerElements` charge les éléments choisis **en une seule requête** (`" and id in (...)"`) et lance une exception si l'un d'eux n'existe pas. C'est le modèle de `chargerPlaces` : un `HashMap` par id, puis on les remet dans l'ordre du choix.
+`calculerMontant` ne lit pas la base lui-même : il **réutilise** `chargerElements`, qui charge les éléments choisis avec leur prix. On écrit une seule fois « charger les éléments choisis », et le récapitulatif de la page de paiement s'en sert aussi (il affiche chaque élément, puis le total).
 
-### 6.2 Côté classe mère : le vrai calcul
+### 6.2 `chargerElements` : d'où ça vient, et comment l'écrire
+
+**Elle n'existe pas encore : c'est à toi de l'écrire, dans ton service.** Son modèle est `chargerPlaces` dans [ReservationService.java](../../cinema-ejb/src/java/reservation/ReservationService.java).
+
+**Sa question :** « donne-moi les éléments que l'utilisateur a cochés, avec leur type et leur prix, dans l'ordre où il les a choisis ».
+
+**Pourquoi une fonction à part ?** Deux autres en ont besoin :
+- `calculerMontant` (§6.1), pour additionner les prix ;
+- la page de paiement, pour afficher le récapitulatif ligne par ligne.
+
+```java
+/**
+ * Les éléments choisis, avec leur type et leur prix (vue ELEMENT_LIB), dans l'ordre du choix.
+ * @throws Exception si un id n'existe pas
+ */
+public static ElementLib[] chargerElements(String[] idElements, Connection c) throws Exception {
+    if (idElements == null || idElements.length == 0) return new ElementLib[0];   // ①
+    boolean ouvert = false;
+    try {
+        if (c == null) { c = new UtilDB().GetConn(); ouvert = true; }
+
+        // ② UNE seule requête pour tous les ids : ... where id in ('ELT000003','ELT000007')
+        Object[] res = CGenUtil.rechercher(new ElementLib(), null, null, c,
+                " and id in (" + listeSql(idElements) + ")");
+
+        // ③ Ranger le résultat par id, pour le retrouver vite
+        Map<String, ElementLib> parId = new HashMap<String, ElementLib>();
+        for (Object o : res) {
+            ElementLib e = (ElementLib) o;
+            parId.put(e.getId(), e);
+        }
+
+        // ④ Remettre dans l'ORDRE DU CHOIX, et refuser un id inconnu
+        ElementLib[] elements = new ElementLib[idElements.length];
+        for (int i = 0; i < idElements.length; i++) {
+            elements[i] = parId.get(idElements[i]);
+            if (elements[i] == null) throw new Exception("Élément introuvable : " + idElements[i]);
+        }
+        return elements;
+    } finally {
+        if (ouvert && c != null) c.close();
+    }
+}
+```
+
+| Étape | Pourquoi |
+|---|---|
+| ① liste vide → tableau vide | rien de coché = total 0, sans requête inutile |
+| ② `id in (...)` | **une** requête au lieu d'une par élément ; on lit la vue `_LIB` pour avoir le prix du type ([vues_lib.md](vues_lib.md)) |
+| ③ `HashMap` par id | Oracle renvoie les lignes **dans l'ordre qu'il veut**, pas dans celui des ids demandés |
+| ④ boucle sur `idElements` | on reconstruit l'ordre du choix ; un id absent du résultat veut dire « n'existe pas » → exception, plutôt qu'un prix oublié en silence |
+
+Imports nécessaires : `java.util.Map`, `java.util.HashMap`, `bean.CGenUtil`, `utilitaire.UtilDB`, `utils.CinemaUtil`.
+
+#### ⚠ `listeSql` est `private` dans `ReservationService`
+
+`chargerPlaces` appelle `listeSql(...)`, qui transforme `{"A","B"}` en `'A','B'`. Mais cette méthode est **`private`** dans `ReservationService` : **ton service ne peut pas l'appeler**. Copie-la dans ta classe de service :
+
+```java
+/** {"A","B"} -> 'A','B' (valeurs échappées), pour un "in (...)". */
+private static String listeSql(String[] valeurs) {
+    StringBuilder sb = new StringBuilder();
+    for (int i = 0; i < valeurs.length; i++) {
+        if (i > 0) sb.append(",");
+        sb.append("'").append(CinemaUtil.echapper(valeurs[i])).append("'");
+    }
+    return sb.toString();
+}
+```
+
+Chaque valeur passe par `CinemaUtil.echapper` : un id contenant une apostrophe ne peut pas casser la requête.
+
+### 6.3 Côté classe mère : le vrai calcul
 Dans `createObject` de la mère, **avant `super`** :
 ```java
 double total = 0;
