@@ -85,7 +85,9 @@ CREATE TABLE JOUET (
 CREATE TABLE TOY (
   id VARCHAR2(100) PRIMARY KEY,
   idclient VARCHAR2(100) NOT NULL REFERENCES CLIENT(id),
-  montanttotal NUMBER(15,2) NOT NULL
+  idpopcorn VARCHAR2(100) NOT NULL REFERENCES POPCORN(id),   -- le paquet choisi
+  montanttotal NUMBER(15,2) NOT NULL,
+  etat NUMBER DEFAULT 1                                       -- 11 = validee (payee), 0 = annulee
 );
 
 CREATE TABLE TOYDETAIL (
