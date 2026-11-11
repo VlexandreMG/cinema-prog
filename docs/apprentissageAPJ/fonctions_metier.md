@@ -45,7 +45,7 @@ Exemple : `calculerMontant` (service) sert à **l'affichage**. Le vrai total est
 - Pas d'objet `request`, pas de HTML : la fonction ne sait pas qu'une page existe. On peut donc la tester seule (§8).
 
 ### 1.5 Si l'écran a besoin d'un libellé, fais une vue `_LIB`
-L'écran veut afficher « E8 — VIP — 25 000 », pas `PLC000041`. Plutôt que de faire une requête par ligne, on crée une **vue** qui joint les tables, et une classe qui la lit (`PLACE_LIB` → `PlaceLib`). La fonction renvoie alors directement des objets prêts à afficher.
+L'écran veut afficher « E8 — VIP — 25 000 », pas `PLC000041`. Plutôt que de faire une requête par ligne, on crée une **vue** qui joint les tables, et une classe qui la lit (`PLACE_LIB` → `PlaceLib`). La fonction renvoie alors directement des objets prêts à afficher. Quand en faire une (et quand c'est inutile) : [vues_lib.md](vues_lib.md).
 
 ## 2. La stratégie, étape par étape
 
