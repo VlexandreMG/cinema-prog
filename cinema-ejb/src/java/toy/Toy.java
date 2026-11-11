@@ -11,13 +11,6 @@ public class Toy extends ClassMere {
     private String idclient;
     private double montanttotal;
 
-    // ② Le constructeur donne le nom de la table
-    public Toy() throws Exception {
-        super.setNomTable("Toy");
-        this.setNomClasseFille("toy.ToyDetail");
-        this.setLiaisonFille("idToy");
-    }
-
     // ③ La clé : préfixe + fonction Oracle
     @Override
     public void construirePK(Connection c) throws Exception {
