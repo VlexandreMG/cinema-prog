@@ -10,6 +10,8 @@ import java.sql.Connection;
 import java.util.HashMap;
 import java.util.Map;
 import utils.CinemaUtil;
+import bean.ClassFille;
+import client.Client;
 
 
 public class ToyService {
@@ -109,7 +111,7 @@ public class ToyService {
         ClassFille[] lignes = new ClassFille[idJouets.length];
         for (int i = 0; i < idJouets.length; i++) {  // 2. une ligne par élément choisi
             ToyDetail d = new ToyDetail();         //    ni id, ni liaison, ni prix
-            d.setIdelement(idJouets[i]);
+            d.setId(idJouets[i]);
             lignes[i] = d;
         }
         a.setFille(lignes);                            // 3. attacher
