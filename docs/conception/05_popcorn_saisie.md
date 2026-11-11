@@ -1,6 +1,6 @@
 # Cinéma — Popcorn : la page de saisie (`popcorn-saisie.jsp`)
 
-La première page de la vente de jouets de popcorn : on choisit le **client**, le **paquet de popcorn**, puis on coche les **jouets** à acheter. Elle mène à la page de paiement (`popcorn-paiement.jsp`, pas encore écrite).
+La première page de la vente de jouets de popcorn : on choisit le **client**, le **paquet de popcorn**, puis on coche les **jouets** à acheter. Elle mène à la page de paiement (`popcorn-paiement.jsp`) : la suite du parcours est tracée dans [06_popcorn_paiement_workflow.md](06_popcorn_paiement_workflow.md).
 
 Page : [cinema-war/web/pages/popcorn/popcorn-saisie.jsp](../../cinema-war/web/pages/popcorn/popcorn-saisie.jsp)
 Modèle suivi : la page de réservation ([04_pages_reservation.md](04_pages_reservation.md)) et [creer_une_page.md](../apprentissageAPJ/creer_une_page.md) §6.
@@ -206,7 +206,7 @@ Les ids réels (`POP000008`, `JOT000013`…) dépendent de l'état des séquence
 | 4 | Changer de client | rien ne se recharge (seul le paquet recharge la page) |
 | 5 | Changer pour « Petit sale » | 2 jouets (Porte-cle Coco, Sifflet), aucun coché ; Total = 0 |
 | 6 | Revenir sur « Grand caramel », sans client, cliquer « Continuer » | le navigateur refuse : « Veuillez sélectionner un élément » sur Client |
-| 7 | Client choisi + jouets cochés, « Continuer » | envoie vers `popcorn-paiement.jsp` (**pas encore écrite** : erreur attendue tant qu'elle n'existe pas) |
+| 7 | Client choisi + jouets cochés, « Continuer » | récapitulatif de `popcorn-paiement.jsp` ([06_popcorn_paiement_workflow.md](06_popcorn_paiement_workflow.md)) |
 | 8 | Après une vente réelle de Mini Groot | Mini Groot n'apparaît plus dans « Grand caramel » |
 
 ### 8.2 Sans navigateur (`curl`)
@@ -255,10 +255,6 @@ Puis `rollback` : rien n'est resté en base.
 | `ORA-00904` sur `JOUET_LIB` | la vue en base n'a pas les nouvelles colonnes : relancer le `CREATE OR REPLACE VIEW JOUET_LIB` du script |
 | Les modifications de la JSP ne s'affichent pas | `ant`, ou copier la JSP dans `…/deployments/cinema.war/pages/popcorn/` |
 
-## 10. La suite : `popcorn-paiement.jsp`
+## 10. La suite
 
-Sur le modèle de `reservation-paiement.jsp` ([04_pages_reservation.md](04_pages_reservation.md), page 2) :
-1. relire `idclient`, `idpopcorn`, `idjouet[]` ;
-2. récapitulatif : `ToyService.chargerElements(idJouets)` + `ToyService.calculerMontant(idJouets)` ;
-3. montant reçu → monnaie à rendre ;
-4. « Payer » (POST, `acte=payer`) → `ToyService.creerToy(idclient, idpopcorn, idJouets, u.getUser().getTuppleID(), null)` → redirection vers la fiche.
+`popcorn-paiement.jsp` et `popcorn-fiche.jsp` sont faites : tout le parcours (clic, requêtes SQL, écriture en base, redirection) est dans [06_popcorn_paiement_workflow.md](06_popcorn_paiement_workflow.md).

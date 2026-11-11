@@ -205,3 +205,17 @@ SELECT j.id, j.lib, j.idpopcorn, p.nom, j.idtypejouet, tj.lib AS typejouet, tj.p
 FROM JOUET j
 JOIN TYPEJOUET tj ON tj.id = j.idtypejouet
 JOIN POPCORN p ON p.id = j.idpopcorn;
+
+-- Une vente de jouets avec le nom du client et du paquet (classe toy.ToyLib) : pour la fiche
+CREATE OR REPLACE VIEW TOY_LIB AS
+SELECT t.id, t.idclient, c.nom AS client, t.idpopcorn, p.nom AS popcorn, t.montanttotal, t.etat
+FROM TOY t
+JOIN CLIENT c  ON c.id = t.idclient
+JOIN POPCORN p ON p.id = t.idpopcorn;
+
+-- Un jouet vendu avec son nom et son type ; prix = prix PAYE, recopie dans la ligne (classe toy.ToyDetailLib)
+CREATE OR REPLACE VIEW TOYDETAIL_LIB AS
+SELECT d.id, d.idtoy, d.idjouet, j.lib, tj.lib AS typejouet, d.prix
+FROM TOYDETAIL d
+JOIN JOUET j      ON j.id = d.idjouet
+JOIN TYPEJOUET tj ON tj.id = j.idtypejouet;

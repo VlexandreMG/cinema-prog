@@ -150,4 +150,18 @@ public class ToyService {
     }
 }
 
+    // ═══ LECTURES : la fiche d'une vente (apres paiement) ═══
+
+    /** Une vente avec le nom du client et du paquet (vue TOY_LIB). */
+    public static ToyLib chargerToy(String idToy, Connection c) throws Exception {
+        return (ToyLib) CinemaUtil.parId(new ToyLib(), idToy, c);
+    }
+
+    /** Les jouets d'une vente, avec le prix PAYÉ (vue TOYDETAIL_LIB). */
+    public static ToyDetailLib[] listerLignes(String idToy, Connection c) throws Exception {
+        Object[] res = CGenUtil.rechercher(new ToyDetailLib(), null, null, c,
+                " and idtoy = '" + CinemaUtil.echapper(idToy) + "' order by lib asc");
+        return (ToyDetailLib[]) res;
+    }
+
 }
