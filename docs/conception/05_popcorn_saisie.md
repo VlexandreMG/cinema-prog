@@ -57,6 +57,64 @@ La page **suivante** (`popcorn-paiement.jsp`) reçoit les mêmes paramètres : `
 3. AFFICHER    les deux listes (selected), le tableau des jouets (checked), le total
 ```
 
+### ⭐ Choisir un paquet → la liste des jouets disponibles : le trajet complet
+
+**L'idée :** la liste des jouets n'est **pas** fabriquée dans le navigateur. Quand on change de paquet, le navigateur **redemande toute la page** au serveur en lui disant quel paquet est choisi. Le serveur lit ce choix, va chercher les jouets dans la base, et renvoie une page neuve qui contient déjà le tableau.
+
+```
+ NAVIGATEUR                                   SERVEUR (WildFly)                         BASE (Oracle)
+ ──────────                                   ─────────────────                         ─────────────
+ ① l'utilisateur choisit
+   « Grand caramel »
+ ② onchange="this.form.submit()"
+   envoie le formulaire en POST ─────────►  ③ module.jsp?but=popcorn/popcorn-saisie.jsp
+   idclient=CLI000002                          la page s'exécute DE NOUVEAU, du début :
+   idpopcorn=POP000008                         idpopcorn = request.getParameter("idpopcorn")
+                                                        = "POP000008"
+                                             ④ paquetChoisi = true
+                                               ToyService.listerJouetsDisponibles("POP000008") ──► ⑤ select * from JOUET_LIB
+                                                                                                      where idpopcorn = 'POP000008'
+                                                                                                      and id not in (…vendus…)
+                                             ⑥ jouets = 4 objets JouetLib  ◄────────────────────── 4 lignes
+                                             ⑦ le for (JouetLib j : jouets) écrit
+                                               une ligne <tr> par jouet dans le HTML
+ ⑨ affiche la nouvelle page :  ◄──────────  ⑧ renvoie la page complète
+   paquet « Grand caramel » sélectionné,
+   tableau des 4 jouets
+```
+
+Les lignes de la page qui font chaque étape :
+
+| Étape | Code dans `popcorn-saisie.jsp` |
+|---|---|
+| ② envoyer le choix | `<select name="idpopcorn" … onchange="this.form.submit()">` : dès que la valeur change, le formulaire part, **vers son `action`**, c'est-à-dire cette même page |
+| ③ relire le choix | `String idpopcorn = request.getParameter("idpopcorn");` |
+| ④ décider | `boolean paquetChoisi = idpopcorn != null && !idpopcorn.isEmpty();` |
+| ④-⑥ chercher les jouets | `JouetLib[] jouets = paquetChoisi ? ToyService.listerJouetsDisponibles(idpopcorn, null) : new JouetLib[0];` |
+| ⑦ écrire le tableau | `<% if (paquetChoisi) { %> … <% for (JouetLib j : jouets) { %> <tr>…</tr> <% } %>` |
+| ⑨ garder le choix affiché | `<%= p.getId().equals(idpopcorn) ? "selected" : "" %>` sur chaque `<option>` du paquet (et de même pour le client) |
+
+**À retenir :** une JSP ne « tourne » pas dans le navigateur. Elle s'exécute **sur le serveur**, une fois **par demande**, et produit du HTML. Pour changer ce qui est affiché, on refait une demande avec de nouveaux paramètres. C'est exactement ce que fait `this.form.submit()`.
+
+**La première visite** (sans paramètre) passe par les mêmes lignes : `idpopcorn` vaut `null`, donc `paquetChoisi = false`, donc pas d'appel au service et pas de tableau.
+
+### Pourquoi ce n'est pas fait en JavaScript (AJAX)
+
+On aurait pu garder la page affichée et aller chercher les jouets en arrière-plan avec du JavaScript (AJAX), comme le fait `/Deroulante` pour les listes APJ ([dropdown_readonly.md](../apprentissageAPJ/dropdown_readonly.md) B5). Ce n'est pas fait, pour quatre raisons :
+
+| Raison | Explication |
+|---|---|
+| **Les jouets sont dans la base** | le JavaScript du navigateur ne peut pas lire Oracle. Il faudrait **un point d'entrée en plus** côté serveur (une servlet ou une JSP qui renvoie du JSON), donc un fichier de plus à écrire, déployer et tester |
+| **Le tableau serait écrit deux fois** | le HTML d'une ligne (case à cocher, `data-prix`, type, prix formaté, protection `CinemaUtil.html`) devrait être **réécrit en JavaScript** pour construire les lignes à partir du JSON. Deux versions du même affichage, à garder identiques |
+| **`/Deroulante` ne suffit pas** | elle remplit une **liste déroulante** (un id + un texte). Ici on veut un **tableau** avec case à cocher, type et prix, et seulement les jouets **disponibles** (le `not in` sur les ventes) |
+| **Moins de code, même méthode** | le rechargement réutilise le service et le HTML déjà écrits, sans fichier en plus. C'est la même technique que la réservation (film → séance → places), donc une seule chose à comprendre |
+
+**Le prix à payer :** la page entière se recharge, ce qui donne un petit clignotement, et l'écran revient en haut. Les choix ne sont pas perdus, car ils repartent en paramètres (`selected`, `checked`).
+
+**Quand le JavaScript vaudrait le coup :** si l'écran se rechargeait très souvent, ou si la page était lourde (beaucoup de données), un appel AJAX serait plus agréable. Pour un paquet choisi une ou deux fois par vente, le rechargement suffit.
+
+**Le seul endroit où le JavaScript s'impose ici : le total.** Il doit changer **à chaque case cochée**. Recharger la page à chaque clic serait pénible, et ce calcul n'a pas besoin de la base : les prix sont déjà dans la page (`data-prix`).
+
 ### Deux destinations pour un seul formulaire, sans JavaScript
 
 ```html
