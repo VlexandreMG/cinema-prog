@@ -311,7 +311,7 @@ Total payé             7 000            [Nouvelle vente]
 |---|---|
 | [popcorn-saisie.jsp](../../cinema-war/web/pages/popcorn/popcorn-saisie.jsp) | A : le bouton « Continuer » (`formaction`) |
 | [popcorn-paiement.jsp](../../cinema-war/web/pages/popcorn/popcorn-paiement.jsp) | **nouveau** — B : récapitulatif ; C : « Payer » ; D : redirection |
-| [popcorn-fiche.jsp](../../cinema-war/web/pages/popcorn/popcorn-fiche.jsp) | **nouveau** — D : la fiche de la vente |
+| [popcorn-fiche.jsp](../../cinema-war/web/pages/popcorn/popcorn-fiche.jsp) | **nouveau** — D : la fiche de la vente (détail : [07_popcorn_fiche.md](07_popcorn_fiche.md)) |
 | [ToyService.java](../../cinema-ejb/src/java/toy/ToyService.java) | `calculerMontant`, `chargerElements`, `creerToy` ; **nouveaux** : `chargerToy`, `listerLignes` |
 | [Toy.java](../../cinema-ejb/src/java/toy/Toy.java) | `createObject` : toutes les règles ; `estVendu` |
 | [ToyLib.java](../../cinema-ejb/src/java/toy/ToyLib.java), [ToyDetailLib.java](../../cinema-ejb/src/java/toy/ToyDetailLib.java) | **nouveaux** : lisent les vues de la fiche |
