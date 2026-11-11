@@ -1,4 +1,13 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
+<%@ page import="reservation.ReservationService" %>
+<%@ page import="utils.CinemaUtil" %>
+<%@ page import="client.Client" %>
+
+
+<% 
+    String idclient = request.getParameter("idclient");          // ce qui est déjà choisi
+    Client[] clients = ReservationService.listerClients(null);   // ta fonction de service
+%>
 
 <%
 try {

@@ -8,7 +8,7 @@ Tout ce qui concerne APJ a été **testé dans le serveur du cinéma** le 11/11/
 
 Prérequis : [creer_une_page.md](creer_une_page.md).
 
----
+--- 
 
 ## Laquelle choisir ?
 
