@@ -86,5 +86,14 @@ public class ToyService {
         }
     }    
 
+    public static double calculerMontant(String[] idElements, Connection c) throws Exception {
+    double total = 0;
+    for (ElementLib e : chargerElements(idElements, c)) {   // chaque élément avec le prix de son type
+        total += e.getPrix();
+    }
+    return total;
+    }
+
     
+
 }
