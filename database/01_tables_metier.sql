@@ -194,3 +194,10 @@ SELECT d.id, d.idreservation, d.idplace, p.numero, t.libelle AS typeplace, d.pri
 FROM RESERVATIONDETAIL d
 JOIN PLACE p     ON p.id = d.idplace
 JOIN TYPEPLACE t ON t.id = p.idtypeplace;
+
+-- Une vue qui permet de relier la jouet avec son prix 
+CREATE OR REPLACE VIEW JOUET_LIB AS 
+SELECT j.id , j.lib , p.nom , tj.prix AS prix
+FROM JOUET j
+JOIN TYPEJOUET tj ON tj.id = j.idtypejouet
+JOIN POPCORN p ON p.id = j.idpopcorn;
