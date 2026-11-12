@@ -1,7 +1,7 @@
 # Cinéma — Conception : la caisse
 
-> **Statut (12/11/2026) :** conception validée. **Faits et testés** : les tables (§12) et les classes `Caisse`, `MouvementCaisse`, `CaisseService.solde` (§13).
-> **Pas encore fait** : `encaisserFacture` et le reste du service, le branchement dans le paiement, la page.
+> **Statut (12/11/2026) :** conception validée. **Faits et testés** : la base (§12), les classes (§13), les fonctions métier et le branchement dans le paiement (§14) : chaque paiement fait entrer l'argent en caisse.
+> **Pas encore fait** : la page « État de la caisse ».
 
 Troisième fonctionnalité majeure, après la réservation et la facture. Même démarche : fiche de lecture du socle, décisions, puis base, règles, fonctions et écrans.
 
@@ -211,3 +211,72 @@ apres rollback : mouvements=0 solde=0.0
 
 ### Prochaine étape
 `CaisseService` : `caissePrincipale` (par le nom, pas par l'id), `encaisserFacture`, `listerMouvements`, `decaisser` ; puis l'appel de `encaisserFacture` dans `ReservationService.reserver`, après `genererFacture` (§8).
+
+---
+
+## 14. Implémentation — les fonctions métier et le branchement (12/11/2026)
+
+### 14.1 `CaisseService` ([caisse/CaisseService.java](../../cinema-ejb/src/java/caisse/CaisseService.java))
+
+| Fonction | Rôle |
+|---|---|
+| `caissePrincipale(c)` | la caisse « Guichet principal », cherchée **par son nom** (constante `NOM_CAISSE_PRINCIPALE`), jamais par son id |
+| `solde(idCaisse, c)` | Σ entrées − Σ sorties des mouvements validés, **calculé en Java** (§13) |
+| `listerMouvements(idCaisse, c)` | les mouvements validés, du plus récent au plus ancien |
+| `encaisserFacture(idFacture, u, c)` | l'**entrée** d'une facture : montant = total de la facture, désignation « Facture n° 0003 — Rasoa Marie », origine = la facture, caisse = la principale |
+| `decaisser(idCaisse, montant, designation, idOrigine, u, c)` | une **sortie** (pour l'achat de films) ; refusée si le solde deviendrait négatif |
+
+Les deux écritures suivent le modèle habituel : avec `c` fourni, elles travaillent dans la transaction de l'appelant ; avec `c == null`, elles ouvrent la leur et font `commit` ou `rollback`.
+
+### 14.2 Le branchement dans le paiement
+
+[ReservationService.java](../../cinema-ejb/src/java/reservation/ReservationService.java), dans `reserver` :
+```java
+r.createObject(u, c);                                            // la réservation
+Facture facture = FactureService.genererFacture(r.getId(), u, c); // la facture (on GARDE son résultat)
+CaisseService.encaisserFacture(facture.getId(), u, c);           // l'argent entre en caisse
+if (ouvert) c.commit();                                          // les trois, ou rien
+```
+`genererFacture` renvoie la facture créée : on la garde pour donner son id à `encaisserFacture`.
+
+L'encaissement est dans `reserver`, **pas** dans `genererFacture` : on peut ainsi facturer après coup une vieille réservation sans l'encaisser une deuxième fois (§8).
+
+### 14.3 Trace réelle d'un paiement dans WildFly (12/11/2026)
+
+Rasoa Marie paie la place A6 (Standard, 15 000) pour *Dune 3*, séance du 12/11 à 18:00, avec 20 000 Ar. Les `INSERT` relevés dans `server.log`, dans l'ordre :
+```
+INSERT INTO RESERVATION ( id , idclient , idseance , daty , montanttotal , etat ) …          RSV000015
+INSERT INTO FACTURE ( id , numero , daty , idclient , client , idreservation , objet , … )    FAC000009 n° 0003
+INSERT INTO MOUVEMENTCAISSE ( id , daty , idcaisse , designation , entree , sortie , idorigine , etat ) …
+```
+En base :
+```
+MOUVEMENTCAISSE  MVC000005 | 12/11/2026 | CAI000002 | entree = 15000 | sortie = 0 | origine FAC000009 | etat 11
+FACTURE          FAC000009 | n° 0003 | total = 15000
+```
+Le client a donné 20 000 et on lui a rendu 5 000 : **15 000** entrent en caisse, le total de la facture (§4).
+
+### 14.4 Les tests (harnais, transaction annulée)
+```
+caisse CAI000002 Guichet principal | solde avant = 0.0
+reserver -> RSV000014 total=30000.0 | facture FAC000008 n°0003
+   mouvement MVC000003 | Facture n° 0003 — Rakoto Jean | entree=30000.0 sortie=0.0 | origine=FAC000008
+solde apres paiement = 30000.0
+REFUS double encaissement : Le document FAC000008 a déjà un mouvement de caisse.
+REFUS decaisser 999 999 : Solde insuffisant : la caisse contient 30 000 Ar, impossible de sortir 999 999 Ar.
+decaisser 10 000 -> MVC000004 | solde = 20000.0
+apres rollback : mouvements=0 factures=2 compteur=2
+```
+Après l'annulation, **tout** est revenu en arrière : pas de mouvement, pas de facture en plus, et le compteur de factures n'a pas bougé (pas de trou).
+
+### 14.5 Pour vérifier toi-même
+```sql
+SELECT id, daty, designation, entree, sortie, idorigine FROM mouvementcaisse ORDER BY id;
+SELECT SUM(entree) - SUM(sortie) AS solde FROM mouvementcaisse WHERE etat >= 11;   -- doit égaler CaisseService.solde
+-- chaque facture a son mouvement :
+SELECT f.numero, f.montanttotal, m.id, m.entree FROM facture f LEFT JOIN mouvementcaisse m ON m.idorigine = f.id ORDER BY f.numero;
+```
+Les factures `0001` et `0002`, émises **avant** ce branchement, n'ont pas de mouvement (question 1 du §11). Rattrapage possible : `CaisseService.encaisserFacture(idFacture, u, null)`.
+
+### 14.6 Prochaine étape
+La page `caisse/caisse-etat.jsp` (solde + liste des mouvements avec les totaux) et son entrée de menu.

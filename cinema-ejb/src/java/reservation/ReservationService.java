@@ -16,6 +16,7 @@ import utils.CinemaUtil;
 import utilitaire.UtilDB;
 import facture.Facture;
 import facture.FactureService;
+import caisse.CaisseService;
 
 
 /**
@@ -221,7 +222,11 @@ public class ReservationService {
 
             // La facture (preuve du paiement), dans la MEME transaction c :
             // si elle echoue, la reservation est annulee aussi (rollback) — jamais l'une sans l'autre.
-            FactureService.genererFacture(r.getId(), u, c);
+            Facture facture = FactureService.genererFacture(r.getId(), u, c);
+
+            // L'argent entre en caisse (+ total de la facture), toujours dans la MEME transaction :
+            // reservation, facture et mouvement de caisse sont enregistres ensemble, ou pas du tout.
+            CaisseService.encaisserFacture(facture.getId(), u, c);
 
             if (ouvert) c.commit();
             return r;
