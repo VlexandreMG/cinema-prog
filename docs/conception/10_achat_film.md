@@ -1,7 +1,6 @@
 # Cinéma — Conception : l'achat de films
 
-> **Statut (12/11/2026) :** conception validée. **Faits et testés** : la base et les classes (§11), les fonctions métier `AchatService` (§12).
-> **Pas encore fait** : la page d'achat et l'entrée de menu.
+> **Statut (12/11/2026) :** **terminée.** Base et classes (§11), fonctions métier (§12), page et menu (§13) faits et testés dans WildFly.
 
 Quatrième et dernière fonctionnalité majeure. Même démarche : fiche de lecture du socle, décisions, puis base, règles, fonctions et écrans.
 
@@ -242,3 +241,72 @@ Rien n'est resté en base après ces tests (A annulé, B refusé).
 
 ### 12.4 Prochaine étape
 La page `achat/achat-saisie.jsp` (titre, durée, salle, distributeur, montant, avec le solde de la caisse affiché), puis l'entrée de menu « Acheter un film ».
+
+---
+
+## 13. Implémentation — la page et le menu (12/11/2026)
+
+### 13.1 La page [achat/achat-saisie.jsp](../../cinema-war/web/pages/achat/achat-saisie.jsp)
+
+URL : `module.jsp?but=achat/achat-saisie.jsp` (menu « Cinéma › Acheter un film »).
+
+Une seule page, deux comportements (le modèle de `reservation-paiement.jsp`) :
+
+| Cas | Ce qui se passe |
+|---|---|
+| **sans `acte`** | le formulaire : solde de la caisse (lecture seule), titre, durée, salle, distributeur, montant |
+| **`acte=acheter`** (POST) | `AchatService.acheterFilm(…, u.getUser().getTuppleID(), null)`, puis `document.location.replace` vers `caisse/caisse-etat.jsp` |
+
+```
+Acheter un film
+Solde de la caisse (Ar)  [ 60 000 ]   (lecture seule : ce qu'on peut dépenser)
+Le film      Titre [          ]   Durée (minutes) [   ]   Salle [ ▼ ]
+L'achat      Distributeur [ ▼ ]   Montant (Ar) [      ]
+                                                          [Acheter]
+```
+
+- **Les fonctions appelées** : `AchatService.listerSalles`, `AchatService.listerDistributeurs`, `CaisseService.caissePrincipale` + `CaisseService.solde` (affichage) ; `AchatService.acheterFilm` (au clic).
+- **Pas de JavaScript** (hors la redirection) : `required` et `min` font vérifier les champs par le navigateur ; le serveur revérifie tout (`Film`, `Achat`, `MouvementCaisse`).
+- **`c = null`** : `acheterFilm` gère sa transaction (commit, ou rollback de tout en cas de refus).
+- **Après l'achat**, on arrive sur l'état de la caisse, qui montre le solde diminué.
+
+### 13.2 L'entrée de menu : [database/03_menu.sql](../../database/03_menu.sql)
+
+Un nouveau script pour les entrées de menu des fonctionnalités :
+```sql
+INSERT INTO MENUDYNAMIQUE (id, libelle, icone, href, rang, niveau, id_pere)
+VALUES ('MENCINEMAACHAT', 'Acheter un film', 'shopping_cart',
+        'module.jsp?but=achat/achat-saisie.jsp', 4, 2, 'MENCINEMA');
+INSERT INTO USERMENU (id, refuser, idmenu, idrole, codeservice, codedir, interdit)
+VALUES ('USMCINEMAACHAT', '*', 'MENCINEMAACHAT', NULL, NULL, NULL, 0);
+```
+- rang **4** : les rangs 2 et 3 sont gardés pour « Vendre du popcorn » et « État de la caisse » (pas encore au menu) ;
+- exécuté, puis **redéployé** et **reconnecté** ([menu_dynamique.md](../apprentissageAPJ/menu_dynamique.md) §6).
+
+Le menu reçu après reconnexion (JSON produit par APJ) :
+```
+"libelle":"Cinéma",          "href":"#?currentMenu=MENCINEMA"
+"libelle":"Réserver",        "href":"module.jsp?but=reservation/reservation-saisie.jsp&currentMenu=MENCINEMARESA"
+"libelle":"Acheter un film", "href":"module.jsp?but=achat/achat-saisie.jsp&currentMenu=MENCINEMAACHAT"
+```
+
+### 13.3 Les tests dans WildFly (`curl`)
+| Test | Résultat |
+|---|---|
+| menu | « Acheter un film » présent, icône `shopping_cart` |
+| page | solde 60 000 ; 2 salles ; distributeurs Disney, Netflix, Warner |
+| achat à 10 000 000 | « Solde insuffisant : la caisse contient 60 000 Ar, impossible de sortir 10 000 000 Ar. » ; aucun « Film trop cher » en base |
+| achat d'*Interstellar* (169 min, Salle 2, Netflix, 5 000) | redirection vers l'état de la caisse ; solde **55 000** |
+
+Les `INSERT` du vrai achat, relevés dans `server.log`, dans l'ordre :
+```
+INSERT INTO FILM ( id , titre , duree , idsalle ) …
+INSERT INTO ACHAT ( id , daty , iddistributeur , idfilm , montant , etat ) …
+INSERT INTO MOUVEMENTCAISSE ( id , daty , idcaisse , designation , entree , sortie , idorigine , etat ) …
+```
+En base :
+```
+ACHAT            ACH000005 | Netflix | Interstellar (FLM000009) | 5000 | etat 11
+MOUVEMENTCAISSE  MVC000009 | sortie = 5000 | origine ACH000005
+```
+⚠ Cet achat est **resté en base** (donnée de démonstration) : *Interstellar* est au catalogue, et la caisse est passée de 60 000 à 55 000.
