@@ -219,3 +219,44 @@ SELECT d.id, d.idtoy, d.idjouet, j.lib, tj.lib AS typejouet, d.prix
 FROM TOYDETAIL d
 JOIN JOUET j      ON j.id = d.idjouet
 JOIN TYPEJOUET tj ON tj.id = j.idtypejouet;
+
+-- ============================================================
+-- Facture client (docs/conception/08_facture_client.md)
+-- Une facture est FIGEE : client, objet et designations sont RECOPIES en texte.
+-- ============================================================
+
+CREATE TABLE FACTURE (
+  id             VARCHAR2(100) PRIMARY KEY,                                     -- FAC000001 (technique)
+  numero         VARCHAR2(20)  NOT NULL UNIQUE,                                 -- 0001/2026 (legal, continu)
+  daty           DATE          NOT NULL,                                        -- date d'emission
+  idclient       VARCHAR2(100) NOT NULL REFERENCES CLIENT(id),
+  client         VARCHAR2(200) NOT NULL,                                        -- nom RECOPIE
+  idreservation  VARCHAR2(100) NOT NULL UNIQUE REFERENCES RESERVATION(id),     -- une seule facture par reservation
+  objet          VARCHAR2(300) NOT NULL,                                        -- "Dune 3 — 11/11/2026 18:00 — Salle 1"
+  montanttotal   NUMBER(15,2)  NOT NULL,
+  etat           NUMBER        DEFAULT 1                                        -- 11 = emise, 0 = annulee (plus tard)
+);
+
+CREATE TABLE FACTUREDETAIL (
+  id           VARCHAR2(100) PRIMARY KEY,                                       -- FAD000001
+  idfacture    VARCHAR2(100) NOT NULL REFERENCES FACTURE(id),
+  designation  VARCHAR2(300) NOT NULL,                                          -- texte RECOPIE
+  prix         NUMBER(15,2)  NOT NULL                                           -- prix PAYE, recopie
+);
+
+-- Le dernier numero de facture emis, par annee. Le CALCUL est en Java (FactureService.prochainNumero) ;
+-- la base garde la valeur et tient le verrou (FOR UPDATE).
+CREATE TABLE COMPTEURFACTURE (
+  annee    NUMBER(4) PRIMARY KEY,
+  dernier  NUMBER    NOT NULL
+);
+
+CREATE SEQUENCE SEQ_FACTURE;
+CREATE OR REPLACE FUNCTION GETSEQFACTURE RETURN NUMBER IS r NUMBER;
+BEGIN SELECT SEQ_FACTURE.NEXTVAL INTO r FROM DUAL; RETURN r; END;
+/
+
+CREATE SEQUENCE SEQ_FACTUREDETAIL;
+CREATE OR REPLACE FUNCTION GETSEQFACTUREDETAIL RETURN NUMBER IS r NUMBER;
+BEGIN SELECT SEQ_FACTUREDETAIL.NEXTVAL INTO r FROM DUAL; RETURN r; END;
+/

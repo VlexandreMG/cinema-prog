@@ -1,7 +1,7 @@
 # Cinéma — Conception : la facture client
 
-> **Statut : conception à valider. Aucun code n'est encore écrit.**
-> Relis, corrige ce qui ne te va pas, puis on implémente.
+> **Statut (12/11/2026) :** conception validée. **Implémenté et testé** : les tables, les classes `Facture` / `FactureDetail` et `FactureService.genererFacture` (§13).
+> **Pas encore fait** : l'appel de `genererFacture` dans le paiement (`reserver`), et les pages.
 
 Ce document suit la même démarche que le [scénario 1](01_scenario_reservation.md) : raconter l'usage, en tirer la base, les règles, les fonctions et les écrans. Il s'appuie sur la **fiche de lecture du socle** (§1).
 
@@ -79,21 +79,21 @@ Le gestionnaire ouvre la facture depuis la fiche de réservation, ou (plus tard)
 
 | Table | Colonnes | Rôle |
 |---|---|---|
-| **FACTURE** | `id` (FAC…), `numero` (`0003/2026`, **UNIQUE**), `daty`, `idclient`, `idreservation` (**UNIQUE**), `montanttotal`, `etat` | la facture (la **mère**) |
+| **FACTURE** | `id` (FAC…), `numero` (`0003/2026`, **UNIQUE**), `daty`, `idclient`, **`client`** (nom recopié), `idreservation` (**UNIQUE**), **`objet`** (« Dune 3 — 11/11/2026 18:00 — Salle 1 », recopié), `montanttotal`, `etat` | la facture (la **mère**) |
 | **FACTUREDETAIL** | `id` (FAD…), `idfacture`, `designation`, `prix` | une ligne de la facture (la **fille**) |
 | **COMPTEURFACTURE** | `annee` (clé), `dernier` | le dernier numéro de facture émis pour chaque année |
 
-Et pour l'affichage :
-| Vue | Ajoute | Pour |
-|---|---|---|
-| `FACTURE_LIB` | nom du client, film, salle, séance | la fiche de la facture, et une future liste |
+**Pas de vue `_LIB` pour la facture.** Une `_LIB` va chercher les noms **en direct** dans les autres tables : si le client changeait de nom, ses anciennes factures changeraient aussi. Or une facture est **figée**. On **recopie** donc les textes une fois pour toutes, au moment de l'émission : le nom du client (`client`), l'objet (`objet`) et chaque ligne (`designation`). La facture s'affiche sans aucune jointure.
 
-Pas besoin de `FACTUREDETAIL_LIB` : les lignes contiennent déjà leur texte et leur prix.
+| Document | Vivant ou figé ? | Vue `_LIB` ? |
+|---|---|---|
+| réservation, places, jouets | **vivant** : on veut les noms à jour | oui |
+| facture | **figé** : on veut les noms du jour du paiement | **non** : textes recopiés |
 
 ### Pourquoi ces choix
 - **`idreservation` UNIQUE** : la base elle-même interdit deux factures pour une réservation, même si le code oubliait de vérifier.
 - **`numero` UNIQUE** : même protection pour les numéros.
-- **`idclient` dans la facture**, alors que la réservation l'a déjà : la facture doit rester lisible et juste toute seule, même si la réservation change plus tard.
+- **`idclient` ET `client`** : `idclient` sert aux **liens** (les factures d'un client), `client` sert à l'**affichage** (le nom tel qu'il était au paiement).
 - **`montanttotal`** = somme des lignes = `RESERVATION.montanttotal` au moment du paiement.
 - **`etat`** : 11 = émise. Plus tard, 0 = annulée (par un avoir). Une facture n'est **jamais supprimée**.
 
@@ -121,6 +121,15 @@ Dans la transaction du paiement (autoCommit = false) :
 | deux factures avec le même numéro | `FOR UPDATE` : un seul paiement à la fois lit et avance le compteur |
 | changement d'année | une ligne par année : la 1re facture de 2027 crée la ligne `2027` et repart à `0001/2027` |
 
+**Qui calcule quoi : le calcul est dans le métier (Java), pas dans la base.**
+
+| Qui | Fait quoi |
+|---|---|
+| **Java** : `FactureService.prochainNumero(c)` | lit `dernier`, **ajoute 1**, **formate** `0003/2026`, crée la ligne de l'année si elle n'existe pas, demande la mise à jour |
+| **Base** : table `COMPTEURFACTURE` | **stocke** `dernier` et **tient le verrou** (`FOR UPDATE`) jusqu'au `commit` |
+
+Pas de trigger, pas de fonction PL/SQL, pas de vue qui calcule le numéro. C'est une différence avec le socle, qui calcule le prochain numéro **dans une vue** (`V_NUMEROFACTURE_EN_COURS`, `MAX() + 1`). Le verrou est le seul rôle laissé à Oracle : deux guichets sont deux connexions différentes, et seule la base peut faire attendre l'une pendant que l'autre travaille.
+
 ## 8. Les règles (dans `Facture.createObject`)
 
 1. la réservation existe et est **validée** (payée) ;
@@ -134,9 +143,9 @@ Dans la transaction du paiement (autoCommit = false) :
 
 | Fonction | Rôle |
 |---|---|
-| `FactureService.genererFacture(reservation, u, c)` | construit la facture et ses lignes à partir de la réservation (désignations recopiées), puis `createObject`. **Reçoit la connexion `c` de la réservation** : même transaction |
+| `FactureService.genererFacture(idReservation, u, c)` | construit la facture et ses lignes à partir de **l'id** de la réservation (textes recopiés), puis `createObject`. Avec la connexion `c` du paiement : même transaction |
 | `FactureService.prochainNumero(c)` | le mécanisme du §7 : verrou, +1, mise à jour du compteur |
-| `FactureService.chargerFacture(idFacture)` | la facture avec ses libellés (vue `FACTURE_LIB`), pour la page |
+| `FactureService.chargerFacture(idFacture)` | la facture (table `FACTURE` directement : ses textes sont déjà dedans) |
 | `FactureService.listerLignes(idFacture)` | ses lignes |
 | `FactureService.factureDeLaReservation(idReservation)` | la facture d'une réservation, pour le lien « Voir la facture » |
 
@@ -146,7 +155,7 @@ reservation-paiement.jsp  « Payer »
    ▼
 ReservationService.reserver(...)            ← ouvre la transaction (autoCommit = false)
    ├─ Reservation.createObject(u, c)        ← comme aujourd'hui : règles + INSERT réservation et lignes
-   ├─ FactureService.genererFacture(r, u, c)  ← NOUVEAU, même connexion c
+   ├─ FactureService.genererFacture(r.getId(), u, c)  ← NOUVEAU, même connexion c
    │     ├─ prochainNumero(c)               ← compteur verrouillé
    │     └─ Facture.createObject(u, c)      ← règles + INSERT facture et lignes
    └─ commit                                ← TOUT est écrit, ou RIEN (rollback)
@@ -160,7 +169,7 @@ reservation-fiche.jsp                       ← affiche « Facture n° 0003/2026
 |---|---|
 | `facture/facture-fiche.jsp` | **nouvelle** : en-tête (cinéma, n° de facture, date), client, film/séance, lignes, total ; mise en page imprimable |
 | `reservation/reservation-fiche.jsp` | **modifiée** : affiche le numéro de facture et un lien « Voir la facture » |
-| `facture/facture-liste.jsp` | facultative : `PageRecherche` APJ sur `FACTURE_LIB` (recherche par client, numéro, date) |
+| `facture/facture-liste.jsp` | facultative : `PageRecherche` APJ directement sur `FACTURE` (recherche par client, numéro, date) |
 
 ## 11. Hors périmètre (pour plus tard)
 
@@ -174,3 +183,101 @@ reservation-fiche.jsp                       ← affiche « Facture n° 0003/2026
 1. **Les réservations déjà payées** (`RSV000004`…) n'ont pas de facture. On leur en génère une (rattrapage), ou on ne facture qu'à partir de maintenant ?
 2. **La date de la facture** = la date du paiement (aujourd'hui) : d'accord ?
 3. **L'en-tête de la facture** : nom du cinéma, adresse, NIF/STAT… On utilise ce qu'il y a dans `MASOCIETE`, ou un texte fixe ?
+
+---
+
+## 13. Implémentation — étape 1 : `genererFacture` et les classes (12/11/2026)
+
+### 13.1 Les fichiers
+
+| Fichier | Rôle |
+|---|---|
+| [database/01_tables_metier.sql](../../database/01_tables_metier.sql) (fin) | tables `FACTURE`, `FACTUREDETAIL`, `COMPTEURFACTURE` ; séquences + fonctions `GETSEQFACTURE` (`FAC`), `GETSEQFACTUREDETAIL` (`FAD`). **Exécuté en base** |
+| [facture/Facture.java](../../cinema-ejb/src/java/facture/Facture.java) | la mère (`ClassMere`) ; `createObject` = les règles du §8 |
+| [facture/FactureDetail.java](../../cinema-ejb/src/java/facture/FactureDetail.java) | la fille (`ClassFille`), liaison `idfacture` |
+| [facture/FactureService.java](../../cinema-ejb/src/java/facture/FactureService.java) | `genererFacture`, `prochainNumero`, `chargerFacture`, `listerLignes`, `factureDeLaReservation` |
+
+### 13.2 `genererFacture(idReservation, u, c)`, pas à pas
+
+```java
+// 1. LIRE la réservation et ses places, avec leurs libellés — DANS la même connexion c
+ReservationLib r = ReservationService.chargerReservation(idReservation, c);        // client, film, séance, salle
+ReservationDetailLib[] places = ReservationService.listerLignes(idReservation, c); // numéro, type, PRIX PAYÉ
+
+// 2. La mère : les textes de l'en-tête sont RECOPIÉS
+String objet = r.getFilm() + " — " + CinemaUtil.date(r.getDateseance()) + " " + r.getHeure() + " — " + r.getSalle();
+Facture f = new Facture();
+f.setIdreservation(r.getId());   f.setClient(r.getClient());   f.setObjet(objet);
+
+// 3. Une ligne par place : désignation recopiée + prix payé (pas le prix actuel du type)
+d.setDesignation(objet + " — Place " + place.getNumero() + " (" + place.getTypeplace() + ")");
+d.setPrix(place.getPrix());
+f.setFille(lignes);
+
+// 4. Les règles, le numéro légal, puis INSERT facture et lignes
+f.createObject(u, c);
+```
+
+- **Elle réutilise les fonctions de la réservation** (`chargerReservation`, `listerLignes`) et leurs vues `_LIB` : la réservation est vivante, on lit donc ses libellés à jour… **au moment** de la facture, puis on les recopie.
+- **Elle lit avec la connexion `c`** : appelée pendant le paiement, elle voit la réservation que la même transaction vient d'insérer, même si elle n'est pas encore « commitée ».
+- **Avec `c == null`**, elle ouvre sa propre transaction et fait `commit`. Elle peut donc aussi servir à **facturer après coup** une réservation déjà payée (question 1 du §12).
+
+### 13.3 `Facture.createObject` : les règles
+
+| # | Règle | Si elle échoue |
+|---|---|---|
+| ① | la réservation existe et a `etat ≥ 11` | « La réservation … n'est pas payée : facture impossible. » |
+| ② | aucune facture pour cette réservation (`count(*)`) | « La réservation … a déjà une facture. » |
+| ③ | au moins une ligne | « Une facture doit avoir au moins une ligne. » |
+| ④ | chaque ligne a une désignation ; somme des lignes = `RESERVATION.montanttotal` | « Incohérence : total des lignes (…) différent du total de la réservation (…). » |
+| ⑤ | compléter : `idclient` (de la réservation), `daty` = aujourd'hui, **`numero` = `prochainNumero(c)`**, `montanttotal`, `etat = 11` | |
+| ⑥ | `super.createObject(u, c)` : INSERT `FACTURE`, puis les lignes `FACTUREDETAIL` | |
+
+Le numéro est demandé **en dernier**, juste avant l'INSERT : une facture refusée par ① à ④ ne touche **jamais** au compteur.
+
+### 13.4 `prochainNumero(c)` : le calcul en Java
+
+```java
+Integer dernier = lireDernierVerrouille(annee, c);         // SELECT dernier … WHERE annee = ? FOR UPDATE
+if (dernier == null) {                                     // 1re facture de l'année
+    insert into COMPTEURFACTURE (annee, dernier) values (?, 0)   // (clé en double → un autre l'a créée : on continue)
+    dernier = lireDernierVerrouille(annee, c);
+}
+int prochain = dernier + 1;                                // le CALCUL, en Java
+update COMPTEURFACTURE set dernier = ? where annee = ?
+return String.format("%04d/%d", prochain, annee);          // 3 → "0003/2026"
+```
+- Écrit en **JDBC simple** (`PreparedStatement`) : `CGenUtil` sait lire, mais pas faire un `UPDATE` libre.
+- **`c` est obligatoire** : sans transaction, le verrou et le « pas de trou » ne veulent plus rien dire.
+
+### 13.5 Les tests (harnais Java, transactions **annulées** : rien n'est resté en base)
+
+**Test 1 — deux factures, puis deux refus**
+```
+FACTURE FAC000001 n°0001/2026 du 2026-11-12 | Rakoto Jean | Dune 3 — 11/11/2026 18:00 — Salle 1 | total=40000.0 etat=11
+   - Dune 3 — 11/11/2026 18:00 — Salle 1 — Place A1 (Standard) : 15000.0
+   - Dune 3 — 11/11/2026 18:00 — Salle 1 — Place E8 (VIP) : 25000.0
+FACTURE FAC000002 n°0002/2026 du 2026-11-12 | Randria Paul | Tsara ny fiainana — 13/11/2026 19:00 — Salle 2 | total=40000.0 etat=11
+   - Tsara ny fiainana — 13/11/2026 19:00 — Salle 2 — Place A1 (Standard) : 15000.0
+   - Tsara ny fiainana — 13/11/2026 19:00 — Salle 2 — Place C6 (VIP) : 25000.0
+factureDeLaReservation(RSV000004) = 0001/2026
+refus OK (deja facturee) : La réservation RSV000004 a déjà une facture.
+refus OK (reservation inexistante) : ReservationLib introuvable : RSV999999
+```
+
+**Test 2 — pas de trou.** Après le `rollback` du test 1, une nouvelle transaction obtient de nouveau **`0001/2026`** : le compteur a été annulé avec le reste. (L'id technique, lui, a consommé ses numéros `FAC…` : c'est normal, il peut avoir des trous.)
+
+**Test 3 — deux guichets en même temps.**
+```
+guichet 1 prend 0001/2026 (pas encore commit)
+guichet 1 annule (rollback) après 2 s
+guichet 2 obtient 0001/2026 après 2.012 s d'attente
+```
+Le guichet 2 a **attendu** que le guichet 1 ait fini. Comme le guichet 1 a annulé, le numéro 1 était de nouveau libre : pas de trou. (Si le guichet 1 avait validé, le guichet 2 aurait obtenu `0002/2026`. Ce cas n'a pas été joué, pour ne pas laisser de facture en base.)
+
+**Après tous les tests :** `FACTURE` = 0 ligne, `COMPTEURFACTURE` = 0 ligne.
+
+### 13.6 Prochaine étape
+1. Appeler `FactureService.genererFacture(r.getId(), u, c)` dans `ReservationService.reserver`, **avant** le `commit` (§9).
+2. La page `facture/facture-fiche.jsp` et le lien « Voir la facture » sur la fiche de réservation.
+3. Les questions 2 et 3 du §12 (date de facture, en-tête). La question 1 (rattrapage) est techniquement possible : `genererFacture(idReservation, u, null)`.
