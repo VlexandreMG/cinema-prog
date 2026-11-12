@@ -15,6 +15,8 @@ import salle.Place;
 import salle.TypePlace;
 import utils.CinemaUtil;
 import utilitaire.Utilitaire;
+import utilitaire.UtilDB;
+
 
 /**
  * L'achat d'un client pour une seance. Table RESERVATION (la mere).

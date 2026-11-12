@@ -51,18 +51,10 @@ public class FactureService {
             f.setObjet(objet);
 
             // 3. Une ligne par place : désignation recopiée + prix PAYÉ (celui de RESERVATIONDETAIL)
-            ClassFille[] lignes = new ClassFille[places.length];
-            for (int i = 0; i < places.length; i++) {
-                FactureDetail d = new FactureDetail();                 // ni id, ni idfacture : APJ les remplit
-                d.setDesignation(objet + " — Place " + places[i].getNumero()
-                        + " (" + places[i].getTypeplace() + ")");
-                d.setPrix(places[i].getPrix());
-                lignes[i] = d;
-            }
-            f.setFille(lignes);
+            
 
             // 4. Toutes les règles + numéro légal + INSERT facture puis lignes (Facture.createObject)
-            f.createObject(u, c);
+            r.createObject(u, c);
 
             if (ouvert) c.commit();
             return f;

@@ -207,7 +207,7 @@ public class ReservationService {
                 ReservationDetail d = new ReservationDetail();
                 d.setIdplace(idPlaces[i]);
                 lignes[i] = d;
-                val += Place.getIdtypeplaceByIdPlace(c ,d.getIdPlace());
+                val += Place.getIdtypeplaceByIdPlace(c ,d.getIdplace());
             }
             r.setFille(lignes);
             r.setMontanttotal(val);
