@@ -3,6 +3,10 @@ package salle;
 import bean.ClassMAPTable;
 import java.sql.Connection;
 import utils.CinemaUtil;
+import bean.CGenUtil;
+import utilitaire.UtilDB;
+
+
 
 /**
  * Un siege d'une salle. Table PLACE.
@@ -60,4 +64,19 @@ public class Place extends ClassMAPTable {
 
     public String getIdtypeplace() { return idtypeplace; }
     public void setIdtypeplace(String idtypeplace) { this.idtypeplace = idtypeplace; }
+
+    public static double getIdtypeplaceByIdPlace(Connection c , String idPlace) throws Exception {
+         boolean ouvert = false;
+    try {
+        if (c == null) { c = new UtilDB().GetConn(); ouvert = true; }   // j'ouvre si on ne m'a rien donné
+        // ... le travail, en passant TOUJOURS c ...
+        Object n = CGenUtil.rechercherSimple("select idtypeplace from PLACE where id = '"
+                + CinemaUtil.echapper(idPlace) + "'", c);
+                String idTypePlace = (String) n;
+                double val = TypePlace.getPrixbyIdTypePlace(c,idTypePlace);
+                return val;
+    } finally {
+        if (ouvert && c != null) c.close();                            // je ferme seulement ce que j'ai ouvert
+    }
+    }
 }
