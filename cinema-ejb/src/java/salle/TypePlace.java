@@ -5,6 +5,7 @@ import java.sql.Connection;
 import bean.CGenUtil;
 import utils.CinemaUtil;
 import utilitaire.UtilDB;
+import java.math.BigDecimal;
 
 /**
  * Une categorie de place (Standard, VIP...) et son prix. Table TYPEPLACE.
@@ -56,13 +57,13 @@ public class TypePlace extends ClassMAPTable {
     public double getPrix() { return prix; }
     public void setPrix(double prix) { this.prix = prix; }
 
-    public static double getPrixbyIdTypePlace(Connection c , String idTypePlace) throws Exception {
+    public static BigDecimal getPrixbyIdTypePlace(Connection c , String idTypePlace) throws Exception {
         boolean ouvert = false;
         try {
             if (c == null) { c = new UtilDB().GetConn(); ouvert = true; }   // j'ouvre si on ne m'a rien donné
-            Object n = CGenUtil.rechercherSimple("select prix from TYPEPLACE where idtypeplace = '"
+            Object n = CGenUtil.rechercherSimple("select prix from TYPEPLACE where id = '"
                 + CinemaUtil.echapper(idTypePlace) + "'", c);
-                double res = (Double) n;
+                BigDecimal res = (BigDecimal) n;
                 return res;
         } finally {
             if (ouvert && c != null) c.close();                            // je ferme seulement ce que j'ai ouvert
