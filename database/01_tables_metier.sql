@@ -262,3 +262,41 @@ CREATE SEQUENCE SEQ_FACTUREDETAIL;
 CREATE OR REPLACE FUNCTION GETSEQFACTUREDETAIL RETURN NUMBER IS r NUMBER;
 BEGIN SELECT SEQ_FACTUREDETAIL.NEXTVAL INTO r FROM DUAL; RETURN r; END;
 /
+
+-- ============================================================
+-- Caisse (docs/conception/09_caisse.md)
+-- La caisse ne stocke JAMAIS son solde : il se CALCULE en Java (CaisseService.solde)
+-- a partir des mouvements (entrees - sorties). Un mouvement est FIGE.
+-- ============================================================
+
+CREATE TABLE CAISSE (
+  id   VARCHAR2(100) PRIMARY KEY,                                    -- CAI000001
+  nom  VARCHAR2(100) NOT NULL
+);
+
+CREATE TABLE MOUVEMENTCAISSE (
+  id           VARCHAR2(100) PRIMARY KEY,                            -- MVC000001
+  daty         DATE          NOT NULL,
+  idcaisse     VARCHAR2(100) NOT NULL REFERENCES CAISSE(id),
+  designation  VARCHAR2(300) NOT NULL,                               -- texte RECOPIE ("Facture n° 0003 — Rakoto Jean")
+  entree       NUMBER(15,2)  DEFAULT 0 NOT NULL CHECK (entree >= 0),
+  sortie       NUMBER(15,2)  DEFAULT 0 NOT NULL CHECK (sortie >= 0),
+  idorigine    VARCHAR2(100) UNIQUE,                                 -- la facture (ou l'achat) : encaissee UNE fois
+  etat         NUMBER        DEFAULT 1,                              -- 11 = valide, 0 = annule (plus tard)
+  -- exactement UN des deux montants est rempli
+  CONSTRAINT ck_mvt_un_sens CHECK ((entree > 0 AND sortie = 0) OR (entree = 0 AND sortie > 0))
+);
+
+CREATE SEQUENCE SEQ_CAISSE;
+CREATE OR REPLACE FUNCTION GETSEQCAISSE RETURN NUMBER IS r NUMBER;
+BEGIN SELECT SEQ_CAISSE.NEXTVAL INTO r FROM DUAL; RETURN r; END;
+/
+
+CREATE SEQUENCE SEQ_MOUVEMENTCAISSE;
+CREATE OR REPLACE FUNCTION GETSEQMOUVEMENTCAISSE RETURN NUMBER IS r NUMBER;
+BEGIN SELECT SEQ_MOUVEMENTCAISSE.NEXTVAL INTO r FROM DUAL; RETURN r; END;
+/
+
+-- L'unique caisse du cinema (pour l'instant)
+INSERT INTO CAISSE (id, nom) VALUES ('CAI' || LPAD(GETSEQCAISSE, 6, '0'), 'Guichet principal');
+COMMIT;
