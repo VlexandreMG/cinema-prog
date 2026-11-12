@@ -6,7 +6,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Calendar;
 import reservation.ReservationDetailLib;
 import reservation.ReservationLib;
 import reservation.ReservationService;
@@ -75,47 +74,43 @@ public class FactureService {
     }
 
     /**
-     * Le prochain numéro LÉGAL de facture de l'année : 0001/2026, 0002/2026...
+     * Le prochain numéro LÉGAL de facture : 0001, 0002, 0003...
      * Continu et SANS TROU : le compteur est lu et mis à jour DANS la transaction de l'appelant.
      *   - FOR UPDATE : un autre paiement attend que celui-ci ait fini (pas de doublon) ;
      *   - un rollback annule aussi la mise à jour du compteur (pas de trou).
-     * Le calcul (+1, format, changement d'année) est fait ICI, en Java ; la base garde la valeur et le verrou.
+     * Le calcul (+1, format) est fait ICI, en Java ; la base garde la valeur et le verrou.
      *
      * @param c OBLIGATOIRE : la connexion de la transaction en cours (jamais null)
      */
     public static String prochainNumero(Connection c) throws Exception {
         if (c == null) throw new Exception("prochainNumero doit être appelé dans une transaction.");
-        int annee = Calendar.getInstance().get(Calendar.YEAR);
 
-        Integer dernier = lireDernierVerrouille(annee, c);
+        Integer dernier = lireDernierVerrouille(c);
         if (dernier == null) {
-            // 1re facture de l'année : on crée la ligne de l'année, puis on la verrouille
+            // Compteur absent (script pas encore passé) : on crée l'unique ligne, puis on la verrouille
             try (PreparedStatement ps = c.prepareStatement(
-                    "insert into COMPTEURFACTURE (annee, dernier) values (?, 0)")) {
-                ps.setInt(1, annee);
+                    "insert into COMPTEURFACTURE (id, dernier) values (1, 0)")) {
                 ps.executeUpdate();
             } catch (SQLException e) {
                 // Un autre paiement l'a créée au même instant (clé en double) : on continue avec la sienne
                 if (e.getErrorCode() != 1) throw e;
             }
-            dernier = lireDernierVerrouille(annee, c);
+            dernier = lireDernierVerrouille(c);
         }
 
         int prochain = dernier + 1;
         try (PreparedStatement ps = c.prepareStatement(
-                "update COMPTEURFACTURE set dernier = ? where annee = ?")) {
+                "update COMPTEURFACTURE set dernier = ? where id = 1")) {
             ps.setInt(1, prochain);
-            ps.setInt(2, annee);
             ps.executeUpdate();
         }
-        return String.format("%04d/%d", prochain, annee);         // 3 → "0003/2026"
+        return String.format("%04d", prochain);         // 3 → "0003"
     }
 
-    /** Lit le dernier numéro de l'année en VERROUILLANT la ligne ; null si l'année n'existe pas encore. */
-    private static Integer lireDernierVerrouille(int annee, Connection c) throws Exception {
+    /** Lit le dernier numéro en VERROUILLANT l'unique ligne du compteur ; null si elle n'existe pas encore. */
+    private static Integer lireDernierVerrouille(Connection c) throws Exception {
         try (PreparedStatement ps = c.prepareStatement(
-                "select dernier from COMPTEURFACTURE where annee = ? for update")) {
-            ps.setInt(1, annee);
+                "select dernier from COMPTEURFACTURE where id = 1 for update")) {
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next() ? rs.getInt(1) : null;
             }

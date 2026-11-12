@@ -244,12 +244,14 @@ CREATE TABLE FACTUREDETAIL (
   prix         NUMBER(15,2)  NOT NULL                                           -- prix PAYE, recopie
 );
 
--- Le dernier numero de facture emis, par annee. Le CALCUL est en Java (FactureService.prochainNumero) ;
--- la base garde la valeur et tient le verrou (FOR UPDATE).
+-- Le dernier numero de facture emis (0001, 0002...). UNE SEULE ligne (id = 1).
+-- Le CALCUL est en Java (FactureService.prochainNumero) ; la base garde la valeur et tient le verrou (FOR UPDATE).
 CREATE TABLE COMPTEURFACTURE (
-  annee    NUMBER(4) PRIMARY KEY,
+  id       NUMBER(1) PRIMARY KEY CHECK (id = 1),   -- interdit une 2e ligne
   dernier  NUMBER    NOT NULL
 );
+INSERT INTO COMPTEURFACTURE (id, dernier) VALUES (1, 0);
+COMMIT;
 
 CREATE SEQUENCE SEQ_FACTURE;
 CREATE OR REPLACE FUNCTION GETSEQFACTURE RETURN NUMBER IS r NUMBER;

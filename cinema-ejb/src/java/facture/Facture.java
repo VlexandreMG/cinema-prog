@@ -20,12 +20,12 @@ import utils.CinemaUtil;
  *
  * Deux numéros :
  *   - id     (FAC000001) : technique, par séquence (des trous sont possibles) ;
- *   - numero (0001/2026) : LÉGAL, continu, sans trou, par année (FactureService.prochainNumero).
+ *   - numero (0001)      : LÉGAL, continu, sans trou (FactureService.prochainNumero).
  */
 public class Facture extends ClassMere {
 
     private String id;
-    private String numero;          // 0001/2026
+    private String numero;          // 0001
     private Date daty;              // date d'émission
     private String idclient;
     private String client;          // nom recopié
