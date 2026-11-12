@@ -1,7 +1,7 @@
 # Cinéma — Conception : l'achat de films
 
-> **Statut (12/11/2026) :** conception validée. **Faits et testés** : la base et les classes `Distributeur`, `Achat` (§11).
-> **Pas encore fait** : `AchatService.acheterFilm` (film + achat + sortie de caisse), la page, le menu.
+> **Statut (12/11/2026) :** conception validée. **Faits et testés** : la base et les classes (§11), les fonctions métier `AchatService` (§12).
+> **Pas encore fait** : la page d'achat et l'entrée de menu.
 
 Quatrième et dernière fonctionnalité majeure. Même démarche : fiche de lecture du socle, décisions, puis base, règles, fonctions et écrans.
 
@@ -190,3 +190,55 @@ apres rollback : achats=0 films Interstellar=0
 
 ### 11.4 Prochaine étape
 `AchatService` : `acheterFilm` (film → achat → `CaisseService.decaisser`, une transaction) et `listerDistributeurs` ; puis la page `achat/achat-saisie.jsp` et l'entrée de menu.
+
+---
+
+## 12. Implémentation — les fonctions métier (12/11/2026)
+
+### 12.1 `AchatService` ([achat/AchatService.java](../../cinema-ejb/src/java/achat/AchatService.java))
+
+| Fonction | Rôle |
+|---|---|
+| `listerDistributeurs(c)` | les distributeurs par nom, pour la liste déroulante |
+| `listerSalles(c)` | les salles par nom, pour choisir la salle du film acheté (**ajoutée** : aucune fonction ne listait les salles) |
+| `acheterFilm(titre, duree, idSalle, idDistributeur, montant, u, c)` | l'opération complète, en **une** transaction |
+
+### 12.2 `acheterFilm`, pas à pas
+```java
+Film film = new Film();  film.setTitre(titre);  film.setDuree(duree);  film.setIdsalle(idSalle);
+film.createObject(u, c);                                   // 1. INSERT FILM        (titre, durée > 0, salle existe)
+
+Achat achat = new Achat();  achat.setIddistributeur(idDistributeur);
+achat.setIdfilm(film.getId());  achat.setMontant(montant);
+achat.createObject(u, c);                                  // 2. INSERT ACHAT       (distributeur, pas déjà acheté, montant > 0)
+
+String designation = "Achat des droits — " + titre + " — " + distributeur.getNom();   // texte recopié
+CaisseService.decaisser(CaisseService.caissePrincipale(c).getId(), montant, designation,
+        achat.getId(), u, c);                              // 3. INSERT MOUVEMENTCAISSE (verrou + solde suffisant ?)
+```
+- **Aucune règle nouvelle** : chaque étape réutilise un `createObject` déjà écrit (`Film`, `Achat`, `MouvementCaisse`).
+- **L'ordre compte** : l'achat a besoin de l'id du film ; la sortie a besoin de l'id de l'achat (`idorigine`).
+- **Tout ou rien** : avec `c == null`, `acheterFilm` ouvre sa transaction ; si la caisse refuse à l'étape 3, le `rollback` annule aussi le film (1) et l'achat (2).
+- ⚠ **Avec `c` fourni**, `acheterFilm` ne fait **pas** de `rollback` : c'est l'appelant qui doit le faire. Depuis une page, on passe donc `null`.
+
+### 12.3 Les tests (harnais Java)
+```
+listerDistributeurs : Disney Netflix Warner | listerSalles : Salle 1 Salle 2
+
+== A. achat qui passe (transaction annulee a la fin)
+solde avant = 60000.0
+achat ACH000002 | film FLM000006 | montant 40000.0
+mouvement MVC000008 | Achat des droits — Interstellar — Netflix | sortie=40000.0 | origine=ACH000002
+solde apres = 20000.0
+
+== B. achat trop cher, transaction geree par acheterFilm (c = null)
+REFUS : Solde insuffisant : la caisse contient 60 000 Ar, impossible de sortir 10 000 000 Ar.
+en base : film 'Film trop cher'=0 achats=0 sorties=0 | solde=60000.0
+```
+- **A** : le film, l'achat et la sortie sont créés ; le solde baisse exactement du montant.
+- **B** : le film « Film trop cher » **avait été inséré** à l'étape 1, mais le refus de l'étape 3 l'a fait disparaître avec le reste. C'est le scénario S-A2 (§3), vérifié.
+
+Rien n'est resté en base après ces tests (A annulé, B refusé).
+
+### 12.4 Prochaine étape
+La page `achat/achat-saisie.jsp` (titre, durée, salle, distributeur, montant, avec le solde de la caisse affiché), puis l'entrée de menu « Acheter un film ».
