@@ -8,6 +8,7 @@ import java.sql.Connection;
 import java.sql.Date;
 import reservation.Reservation;
 import utilitaire.Utilitaire;
+import utilitaire.UtilDB;
 import utils.CinemaUtil;
 
 /**

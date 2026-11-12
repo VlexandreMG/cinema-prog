@@ -5,6 +5,8 @@ import bean.ClassMAPTable;
 import java.sql.Connection;
 import java.sql.Date;
 import utils.CinemaUtil;
+import reservation.Reservation;
+import utilitaire.UtilDB;
 
 /**
  * Une projection d'un film a une date et une heure. Table SEANCE.
@@ -101,4 +103,18 @@ public class Seance extends ClassMAPTable {
 
     public String getHeure() { return heure; }
     public void setHeure(String heure) { this.heure = heure; }
+
+    public static Seance getSeanceByIdReservation(Connection c , String idRes) throws Exception {
+         boolean ouvert = false;
+    try {
+        if (c == null) { c = new UtilDB().GetConn(); ouvert = true; }   // j'ouvre si on ne m'a rien donné
+        // ... le travail, en passant TOUJOURS c ...
+        Object n = CGenUtil.rechercherSimple("select * from SEANCE where id = '"
+                + CinemaUtil.echapper(idRes) + "'", c);
+                Seance res = (Seance) n;
+        return res;
+    } finally {
+        if (ouvert && c != null) c.close();                            // je ferme seulement ce que j'ai ouvert
+    }
+    }
 }
