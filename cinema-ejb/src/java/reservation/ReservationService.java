@@ -210,8 +210,12 @@ public class ReservationService {
                 val += Place.getIdtypeplaceByIdPlace(c ,d.getIdplace());
             }
             r.setFille(lignes);
+            Seance sc = Seance.getSeanceByIdReservation(c,r.getId());
+            if ( Integer.parseInt(sc.getHeure()) > Integer.parseInt("20:00")) {
+                r.setMontanttotal(val * 0.5);
+            } else {
             r.setMontanttotal(val);
-
+            }
             r.createObject(u, c);       // controles + INSERT de la mere puis des lignes
 
             // La facture (preuve du paiement), dans la MEME transaction c :
