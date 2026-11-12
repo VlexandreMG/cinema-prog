@@ -14,6 +14,9 @@ import salle.PlaceLib;
 import salle.Salle;
 import utils.CinemaUtil;
 import utilitaire.UtilDB;
+import facture.Facture;
+import facture.FactureService;
+
 
 /**
  * Les fonctions metier de l'ecran de reservation (scenario 1).
@@ -215,6 +218,10 @@ public class ReservationService {
             r.setFille(lignes);
 
             r.createObject(u, c);       // controles + INSERT de la mere puis des lignes
+
+            // La facture (preuve du paiement), dans la MEME transaction c :
+            // si elle echoue, la reservation est annulee aussi (rollback) — jamais l'une sans l'autre.
+            FactureService.genererFacture(r.getId(), u, c);
 
             if (ouvert) c.commit();
             return r;
