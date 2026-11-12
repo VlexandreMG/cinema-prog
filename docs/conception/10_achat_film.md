@@ -1,0 +1,141 @@
+# Cinéma — Conception : l'achat de films
+
+> **Statut : conception à valider. Aucun code n'est encore écrit.**
+
+Quatrième et dernière fonctionnalité majeure. Même démarche : fiche de lecture du socle, décisions, puis base, règles, fonctions et écrans.
+
+---
+
+## 1. Fiche de lecture : l'achat dans async standard
+
+Le socle suit une **chaîne complète** d'achat (`faturefournisseur/`, 43 classes) :
+
+```
+Demande d'achat → Bon de commande → Bon de livraison → Facture fournisseur → Paiement (sortie de caisse)
+   DmdAchat        As_BonDeCommande   As_BonDeLivraison   FactureFournisseur     MvtCaisse
+```
+
+| Élément | Ce que c'est |
+|---|---|
+| **`FOURNISSEUR`** (`Fournisseur`) | à qui on achète : nom, contact, devise, banque, taxe… |
+| **`As_BonDeCommande`** + lignes | la commande passée au fournisseur (mère + filles) |
+| **`FactureFournisseur`** + `FactureFournisseurDetails` | la facture **reçue** du fournisseur ; hérite de la même mère que la facture client (`FactureCF`) ; lignes qté / PU / TVA |
+| **le paiement** | une **sortie** de caisse |
+
+**C'est le miroir de la vente** : la vente fait **entrer** l'argent (facture client → entrée de caisse), l'achat le fait **sortir** (achat → sortie de caisse).
+
+**Ce qu'on garde** : le fournisseur (→ `DISTRIBUTEUR`), l'achat, la sortie de caisse.
+**Ce qu'on laisse** : demande d'achat, bon de commande, livraison, facture fournisseur, TVA, devises, échéances.
+
+## 2. Les décisions (12/11/2026)
+
+| Question | Décision |
+|---|---|
+| Combien de films par achat ? | **Un seul** : un achat = un distributeur, un film, un montant. Pas de lignes |
+| D'où vient le film ? | **L'achat crée le film** : acheter un film l'ajoute au catalogue, dans la même transaction |
+| Comment l'achat est-il payé ? | **Immédiatement** : l'achat et la **sortie de caisse** dans la même transaction ; refusé si la caisse n'a pas assez |
+| Les distributeurs ? | **Une table** `DISTRIBUTEUR` (Netflix, Disney…), choisie dans une liste |
+
+## 3. Le scénario
+
+**S-A1 — Acheter un film (Gestionnaire)**
+Le cinéma veut passer *Interstellar*. Le gestionnaire saisit :
+- le **film** : titre « Interstellar », durée 169 min, salle « Salle 2 » ;
+- le **distributeur** : Netflix ;
+- le **montant** : 40 000 Ar.
+
+Au clic sur « Acheter », **en une seule opération**, le système :
+1. **crée le film** *Interstellar* dans le catalogue ;
+2. **enregistre l'achat** `ACH000001` (Netflix, Interstellar, 40 000) ;
+3. **fait sortir l'argent** de la caisse : « Achat des droits — Interstellar — Netflix », **sortie 40 000**.
+
+Le solde de la caisse passe de 60 000 à 20 000. *Interstellar* peut maintenant recevoir des séances.
+
+**S-A2 — Pas assez d'argent**
+Le gestionnaire veut acheter un autre film à 100 000 Ar, mais la caisse n'a plus que 20 000 Ar. Le système refuse : « Solde insuffisant : la caisse contient 20 000 Ar, impossible de sortir 100 000 Ar. » **Rien n'est enregistré** : ni le film, ni l'achat.
+
+**Ce qui ne doit jamais arriver :**
+- un achat **sans** sa sortie de caisse, ou une sortie **sans** son achat ;
+- un film **créé** alors que son achat a échoué ;
+- une caisse **négative** ;
+- le **même film** acheté deux fois.
+
+## 4. C'est ici que tout se rejoint
+
+Cette fonctionnalité **n'a presque rien de neuf à inventer** côté argent : elle réutilise ce qui existe déjà.
+
+| Déjà fait | Réutilisé par l'achat |
+|---|---|
+| `Film.createObject` (titre, durée > 0, salle existe) | créer le film acheté |
+| `CaisseService.caissePrincipale` | la caisse d'où sort l'argent |
+| `CaisseService.decaisser` | la sortie de caisse |
+| `MouvementCaisse.createObject`, règle ⑤ : verrou + « pas de solde négatif » | **refuser** un achat trop cher |
+| `idorigine` UNIQUE dans `MOUVEMENTCAISSE` | un achat n'est décaissé qu'une fois |
+
+## 5. La base
+
+| Table | Colonnes | Rôle |
+|---|---|---|
+| **`DISTRIBUTEUR`** | `id` (DIS…), `nom`, `contact` | à qui on achète (le `FOURNISSEUR` du socle) |
+| **`ACHAT`** | `id` (ACH…), `daty`, `iddistributeur`, `idfilm` (**UNIQUE**), `montant`, `etat` | l'achat des droits d'un film |
+
+- **`idfilm` UNIQUE** : un film n'est acheté qu'une fois (la base le garantit).
+- **`montant`** > 0 (`CHECK`).
+- **`etat`** : 11 = payé (immédiatement) ; 0 = annulé (plus tard).
+- **Pas de lignes** : un film par achat, donc `ACHAT` est une table simple (`ClassMAPTable`), comme `MOUVEMENTCAISSE`.
+- **Pas de vue `_LIB` pour l'instant** : une liste des achats pourra en avoir une (nom du distributeur, titre du film), car ces noms sont **vivants** ; l'achat lui-même n'est pas un document officiel figé comme la facture.
+
+Données de départ : quelques distributeurs (Netflix, Disney, Warner).
+
+## 6. Les règles (dans `Achat.createObject`)
+
+1. le distributeur existe ;
+2. le film existe (créé juste avant, dans la même transaction) ;
+3. le film n'a **pas déjà** été acheté ;
+4. `montant` > 0 ;
+5. compléter : `daty` = aujourd'hui, `etat` = 11 (**fixé explicitement**) ;
+6. `super.createObject` → INSERT.
+
+La règle « assez d'argent en caisse » **n'est pas ici** : elle est déjà dans `MouvementCaisse.createObject` (règle ⑤), appelée par `decaisser`. Pas besoin de l'écrire deux fois.
+
+## 7. Les fonctions (`AchatService`)
+
+| Fonction | Rôle |
+|---|---|
+| `acheterFilm(titre, duree, idsalle, iddistributeur, montant, u, c)` | **l'opération complète** : crée le film, enregistre l'achat, fait la sortie de caisse ; une seule transaction |
+| `listerDistributeurs(c)` | pour la liste déroulante de l'écran |
+| `listerAchats(c)` | (plus tard) pour une liste des achats |
+
+### Le déroulement de `acheterFilm`
+```
+acheterFilm(...)                                            autoCommit = false
+  ├─ 1. Film f = new Film(titre, duree, idsalle) ; f.createObject(u, c)       → INSERT FILM
+  ├─ 2. Achat a = new Achat(iddistributeur, f.getId(), montant) ; a.createObject(u, c)  → INSERT ACHAT
+  ├─ 3. CaisseService.decaisser(caissePrincipale, montant,
+  │        "Achat des droits — " + titre + " — " + distributeur, a.getId(), u, c)
+  │        └─ MouvementCaisse.createObject : verrou caisse + solde ≥ montant ?   → INSERT MOUVEMENTCAISSE
+  └─ commit                                                  le film, l'achat et la sortie, ou RIEN
+```
+- **L'ordre compte** : le film d'abord (l'achat a besoin de son id), puis l'achat (la sortie a besoin de son id comme origine), puis la sortie.
+- **Si la caisse n'a pas assez** : `decaisser` lance « Solde insuffisant », `acheterFilm` fait `rollback` → le film et l'achat, déjà insérés dans la transaction, **disparaissent** aussi. C'est le scénario S-A2.
+
+## 8. Les écrans
+
+| Page | Contenu |
+|---|---|
+| `achat/achat-saisie.jsp` | formulaire : titre, durée, salle (liste), distributeur (liste), montant ; **le solde de la caisse affiché** (lecture seule), pour savoir ce qu'on peut dépenser ; bouton « Acheter » (POST) |
+| après l'achat | redirection vers la page « État de la caisse », qui montre la nouvelle sortie |
+| entrée de menu « Acheter un film » | `MENUDYNAMIQUE` + `USERMENU` ([menu_dynamique.md](../apprentissageAPJ/menu_dynamique.md)) |
+
+## 9. Hors périmètre (pour plus tard)
+
+- plusieurs films par achat (mère + lignes) ;
+- facture fournisseur, TVA, paiement différé ;
+- annuler un achat (sortie inverse, film retiré) ;
+- empêcher de programmer une séance pour un film **non acheté** (aujourd'hui, les séances sont créées en SQL).
+
+## 10. Questions encore ouvertes
+
+1. **Les films déjà au catalogue** (*Dune 3*, *Coco*, *Tsara ny fiainana*) n'ont jamais été « achetés ». On les laisse comme ça (films d'avant le module), ou on leur crée un achat sans sortie de caisse ?
+2. **Les montants** : la caisse contient **60 000 Ar** aujourd'hui. Avec des prix réalistes de droits de film (plusieurs millions), **tout achat serait refusé**. Pour les tests, on prend de petits montants (ex. 40 000), ou on prévoit un moyen d'alimenter la caisse (un apport en entrée) ?
+3. **Les distributeurs de départ** : Netflix, Disney, Warner — d'accord, ou d'autres noms ?
