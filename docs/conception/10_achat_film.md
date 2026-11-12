@@ -1,6 +1,7 @@
 # Cinéma — Conception : l'achat de films
 
-> **Statut : conception à valider. Aucun code n'est encore écrit.**
+> **Statut (12/11/2026) :** conception validée. **Faits et testés** : la base et les classes `Distributeur`, `Achat` (§11).
+> **Pas encore fait** : `AchatService.acheterFilm` (film + achat + sortie de caisse), la page, le menu.
 
 Quatrième et dernière fonctionnalité majeure. Même démarche : fiche de lecture du socle, décisions, puis base, règles, fonctions et écrans.
 
@@ -139,3 +140,53 @@ acheterFilm(...)                                            autoCommit = false
 1. **Les films déjà au catalogue** (*Dune 3*, *Coco*, *Tsara ny fiainana*) n'ont jamais été « achetés ». On les laisse comme ça (films d'avant le module), ou on leur crée un achat sans sortie de caisse ?
 2. **Les montants** : la caisse contient **60 000 Ar** aujourd'hui. Avec des prix réalistes de droits de film (plusieurs millions), **tout achat serait refusé**. Pour les tests, on prend de petits montants (ex. 40 000), ou on prévoit un moyen d'alimenter la caisse (un apport en entrée) ?
 3. **Les distributeurs de départ** : Netflix, Disney, Warner — d'accord, ou d'autres noms ?
+
+---
+
+## 11. Implémentation — la base et les classes (12/11/2026)
+
+### 11.1 La base
+Ajoutée à la fin de [01_tables_metier.sql](../../database/01_tables_metier.sql) et exécutée dans `cinema` :
+
+| Objet | Détail |
+|---|---|
+| `DISTRIBUTEUR` | `id`, `nom`, `contact` |
+| `ACHAT` | `id`, `daty`, `iddistributeur` (→ `DISTRIBUTEUR`), `idfilm` (→ `FILM`, **UNIQUE**), `montant` (`CHECK > 0`), `etat` |
+| séquences + fonctions | `GETSEQDISTRIBUTEUR` (`DIS`), `GETSEQACHAT` (`ACH`) |
+| données de départ | Netflix (`DIS000002`), Disney (`DIS000003`), Warner (`DIS000004`) |
+
+Les ids des distributeurs commencent à `DIS000002`, comme la caisse à `CAI000002` : un numéro de séquence a été consommé sans être utilisé. C'est un trou normal ([creer_une_sequence.md](../apprentissageAPJ/creer_une_sequence.md) §7) : le code ne doit jamais écrire ces ids en dur.
+
+### 11.2 Les classes (package `achat`)
+
+| Fichier | Rôle |
+|---|---|
+| [achat/Distributeur.java](../../cinema-ejb/src/java/achat/Distributeur.java) | `ClassMAPTable` ; contrôle : nom obligatoire |
+| [achat/Achat.java](../../cinema-ejb/src/java/achat/Achat.java) | `ClassMAPTable` (pas de lignes : un film par achat) ; `createObject` = les règles du §6 |
+
+`Achat.createObject`, dans l'ordre :
+| # | Règle | Message si refus |
+|---|---|---|
+| ① | le distributeur existe | « Distributeur introuvable : … » |
+| ② | le film existe (créé juste avant, même transaction) | « Film introuvable : … » |
+| ③ | le film n'est pas déjà acheté | « Le film … a déjà été acheté. » |
+| ④ | montant > 0 | « Le montant de l'achat doit être supérieur à 0. » |
+| ⑤ | `daty` = aujourd'hui, `etat` = 11 (fixé explicitement) | |
+| ⑥ | `super.createObject` → INSERT + historique | |
+
+La règle « assez d'argent en caisse » n'y est pas : elle sera appliquée par `decaisser` → `MouvementCaisse.createObject` (règle ⑤), dans `acheterFilm`.
+
+### 11.3 Les tests (harnais Java, transaction annulée)
+Le film est créé avec `Film.createObject` (déjà existant), puis acheté :
+```
+film cree FLM000004 Interstellar (169 min, SAL000002)
+OK    achat ACH000001 | DIS000002 | FLM000004 | montant=40000.0 | etat=11 | daty=2026-11-12
+REFUS meme film achete 2 fois : Le film FLM000004 a déjà été acheté.
+REFUS distributeur inexistant : Distributeur introuvable : DIS999999
+REFUS film inexistant : Film introuvable : FLM999999
+REFUS montant 0 : Le montant de l'achat doit être supérieur à 0.
+apres rollback : achats=0 films Interstellar=0
+```
+
+### 11.4 Prochaine étape
+`AchatService` : `acheterFilm` (film → achat → `CaisseService.decaisser`, une transaction) et `listerDistributeurs` ; puis la page `achat/achat-saisie.jsp` et l'entrée de menu.

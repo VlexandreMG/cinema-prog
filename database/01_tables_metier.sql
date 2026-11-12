@@ -300,3 +300,40 @@ BEGIN SELECT SEQ_MOUVEMENTCAISSE.NEXTVAL INTO r FROM DUAL; RETURN r; END;
 -- L'unique caisse du cinema (pour l'instant)
 INSERT INTO CAISSE (id, nom) VALUES ('CAI' || LPAD(GETSEQCAISSE, 6, '0'), 'Guichet principal');
 COMMIT;
+
+-- ============================================================
+-- Achat de films (docs/conception/10_achat_film.md)
+-- Un achat = un distributeur, un film (cree par l'achat), un montant.
+-- Paye immediatement : l'achat et sa SORTIE de caisse sont dans la meme transaction.
+-- ============================================================
+
+CREATE TABLE DISTRIBUTEUR (
+  id       VARCHAR2(100) PRIMARY KEY,                               -- DIS000001
+  nom      VARCHAR2(100) NOT NULL,
+  contact  VARCHAR2(200)
+);
+
+CREATE TABLE ACHAT (
+  id              VARCHAR2(100) PRIMARY KEY,                        -- ACH000001
+  daty            DATE          NOT NULL,
+  iddistributeur  VARCHAR2(100) NOT NULL REFERENCES DISTRIBUTEUR(id),
+  idfilm          VARCHAR2(100) NOT NULL UNIQUE REFERENCES FILM(id), -- un film n'est achete qu'UNE fois
+  montant         NUMBER(15,2)  NOT NULL CHECK (montant > 0),
+  etat            NUMBER        DEFAULT 1                           -- 11 = paye, 0 = annule (plus tard)
+);
+
+CREATE SEQUENCE SEQ_DISTRIBUTEUR;
+CREATE OR REPLACE FUNCTION GETSEQDISTRIBUTEUR RETURN NUMBER IS r NUMBER;
+BEGIN SELECT SEQ_DISTRIBUTEUR.NEXTVAL INTO r FROM DUAL; RETURN r; END;
+/
+
+CREATE SEQUENCE SEQ_ACHAT;
+CREATE OR REPLACE FUNCTION GETSEQACHAT RETURN NUMBER IS r NUMBER;
+BEGIN SELECT SEQ_ACHAT.NEXTVAL INTO r FROM DUAL; RETURN r; END;
+/
+
+-- Les distributeurs de depart
+INSERT INTO DISTRIBUTEUR (id, nom, contact) VALUES ('DIS' || LPAD(GETSEQDISTRIBUTEUR, 6, '0'), 'Netflix', 'licensing@netflix.example');
+INSERT INTO DISTRIBUTEUR (id, nom, contact) VALUES ('DIS' || LPAD(GETSEQDISTRIBUTEUR, 6, '0'), 'Disney',  'droits@disney.example');
+INSERT INTO DISTRIBUTEUR (id, nom, contact) VALUES ('DIS' || LPAD(GETSEQDISTRIBUTEUR, 6, '0'), 'Warner',  'cinema@warner.example');
+COMMIT;
