@@ -138,4 +138,19 @@ public class Reservation extends ClassMere {
 
     public int getEtat() { return etat; }
     public void setEtat(int etat) { this.etat = etat; }
+
+    public static Reservation getReservationByIdReservation(Connection c , String idRes) throws Exception {
+         boolean ouvert = false;
+    try {
+        if (c == null) { c = new UtilDB().GetConn(); ouvert = true; }   // j'ouvre si on ne m'a rien donné
+        // ... le travail, en passant TOUJOURS c ...
+        Object n = CGenUtil.rechercherSimple("select * from RESERVATION where id = '"
+                + CinemaUtil.echapper(idRes) + "'", c);
+                Reservation res = (Reservation) n;
+        return res;
+    } finally {
+        if (ouvert && c != null) c.close();                            // je ferme seulement ce que j'ai ouvert
+    }
+    }
+}
 }
