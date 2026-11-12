@@ -17,7 +17,7 @@ import utilitaire.UtilDB;
 import facture.Facture;
 import facture.FactureService;
 import caisse.CaisseService;
-
+import salle.Place;
 
 /**
  * Les fonctions metier de l'ecran de reservation (scenario 1).
@@ -170,17 +170,7 @@ public class ReservationService {
     //  LECTURES : la fiche d'une reservation (apres paiement)
     // ═══════════════════════════════════════════════════════════════
 
-    /** Une reservation avec les libelles du client, du film, de la salle et de la seance. */
-    public static ReservationLib chargerReservation(String idReservation, Connection c) throws Exception {
-        return (ReservationLib) CinemaUtil.parId(new ReservationLib(), idReservation, c);
-    }
-
-    /** Les places d'une reservation, avec le prix paye pour chacune. */
-    public static ReservationDetailLib[] listerLignes(String idReservation, Connection c) throws Exception {
-        Object[] res = CGenUtil.rechercher(new ReservationDetailLib(), null, null, c,
-                " and idreservation = '" + CinemaUtil.echapper(idReservation) + "' order by numero asc");
-        return (ReservationDetailLib[]) res;
-    }
+    
 
     // ═══════════════════════════════════════════════════════════════
     //  ECRITURE : le bouton Reserver
@@ -206,6 +196,8 @@ public class ReservationService {
                 throw new Exception("Choisissez au moins une place.");
             }
 
+            double val = 0;
+
             Reservation r = new Reservation();
             r.setIdclient(idClient);
             r.setIdseance(idSeance);
@@ -215,8 +207,10 @@ public class ReservationService {
                 ReservationDetail d = new ReservationDetail();
                 d.setIdplace(idPlaces[i]);
                 lignes[i] = d;
+                val += Place.getIdtypeplaceByIdPlace(c ,d.getIdPlace());
             }
             r.setFille(lignes);
+            r.setMontanttotal(val);
 
             r.createObject(u, c);       // controles + INSERT de la mere puis des lignes
 

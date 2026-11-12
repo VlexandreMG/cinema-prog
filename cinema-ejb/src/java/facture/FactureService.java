@@ -11,6 +11,7 @@ import reservation.ReservationLib;
 import reservation.ReservationService;
 import utilitaire.UtilDB;
 import utils.CinemaUtil;
+import salle.Place;
 
 /**
  * Les fonctions métier de la facture client (docs/conception/08_facture_client.md).
@@ -38,8 +39,8 @@ public class FactureService {
             if (c == null) { c = new UtilDB().GetConn(); c.setAutoCommit(false); ouvert = true; }
 
             // 1. LIRE la réservation et ses places, avec leurs libellés (vues _LIB), DANS la même connexion
-            ReservationLib r = ReservationService.chargerReservation(idReservation, c);
-            ReservationDetailLib[] places = ReservationService.listerLignes(idReservation, c);
+            // ReservationLib r = ReservationService.chargerReservation(idReservation, c);
+            // ReservationDetailLib[] places = ReservationService.listerLignes(idReservation, c);
 
             // 2. La mère : les textes de l'en-tête sont RECOPIÉS (la facture est figée)
             String objet = r.getFilm() + " — " + CinemaUtil.date(r.getDateseance()) + " " + r.getHeure()
