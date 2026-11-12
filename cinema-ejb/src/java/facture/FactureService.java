@@ -6,12 +6,12 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import reservation.ReservationDetailLib;
-import reservation.ReservationLib;
+import reservation.Reservation;
 import reservation.ReservationService;
 import utilitaire.UtilDB;
 import utils.CinemaUtil;
 import salle.Place;
+
 
 /**
  * Les fonctions métier de la facture client (docs/conception/08_facture_client.md).
@@ -40,14 +40,14 @@ public class FactureService {
 
             // 1. LIRE la réservation et ses places, avec leurs libellés (vues _LIB), DANS la même connexion
             // ReservationLib r = ReservationService.chargerReservation(idReservation, c);
+            Reservation r = Reservation.getReservationByIdReservation(c,idReservation);
             // ReservationDetailLib[] places = ReservationService.listerLignes(idReservation, c);
 
             // 2. La mère : les textes de l'en-tête sont RECOPIÉS (la facture est figée)
-            String objet = r.getFilm() + " — " + CinemaUtil.date(r.getDateseance()) + " " + r.getHeure()
-                    + " — " + r.getSalle();
+            String objet = r.getMontanttotal() + " — " + CinemaUtil.date(r.getDaty());
             Facture f = new Facture();
             f.setIdreservation(r.getId());
-            f.setClient(r.getClient());
+            f.setClient(r.getIdclient());
             f.setObjet(objet);
 
             // 3. Une ligne par place : désignation recopiée + prix PAYÉ (celui de RESERVATIONDETAIL)
