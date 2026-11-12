@@ -79,4 +79,6 @@ public class Place extends ClassMAPTable {
         if (ouvert && c != null) c.close();                            // je ferme seulement ce que j'ai ouvert
     }
     }
+
+    
 }

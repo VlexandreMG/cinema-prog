@@ -60,4 +60,15 @@ public class ReservationDetail extends ClassFille {
 
     public double getPrix() { return prix; }
     public void setPrix(double prix) { this.prix = prix; }
+
+    public static String[] getListIdPlace(Connection C, String idReservation) throws Exception {
+        boolean ouvert = false;
+    try {
+        if (c == null) { c = new UtilDB().GetConn(); ouvert = true; }   // j'ouvre si on ne m'a rien donné
+        // ... le travail, en passant TOUJOURS c ...
+        
+    } finally {
+        if (ouvert && c != null) c.close();                            // je ferme seulement ce que j'ai ouvert
+    }
+    }
 }
