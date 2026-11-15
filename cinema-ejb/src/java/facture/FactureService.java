@@ -54,7 +54,7 @@ public class FactureService {
             
 
             // 4. Toutes les règles + numéro légal + INSERT facture puis lignes (Facture.createObject)
-            r.createObject(u, c);
+            f.createObject(u, c);
 
             if (ouvert) c.commit();
             return f;
