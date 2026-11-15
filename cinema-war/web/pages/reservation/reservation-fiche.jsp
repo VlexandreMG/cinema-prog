@@ -14,8 +14,10 @@ try {
     if (lien == null) lien = "module.jsp";
 
     String id = request.getParameter("id");
-    ReservationLib r = ReservationService.chargerReservation(id, null);
-    ReservationDetailLib[] lignes = ReservationService.listerLignes(id, null);
+    // ReservationLib r = ReservationService.chargerReservation(id, null);
+    Reservation r = Reservation.getReservationByIdReservation(null,id);
+    // ReservationDetailLib[] lignes = ReservationService.listerLignes(id, null);
+    
 
     Double recu = null;
     try { recu = Double.valueOf(request.getParameter("recu")); } catch (Exception ignore) { }

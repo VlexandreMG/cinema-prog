@@ -62,7 +62,8 @@ public class TypePlace extends ClassMAPTable {
         try {
             if (c == null) { c = new UtilDB().GetConn(); ouvert = true; }   // j'ouvre si on ne m'a rien donné
             Object n = CinemaUtil.parId(new TypePlace(),idTypePlace,c);
-                double res = ((Number) n.getPrix()).doubleValue();
+                TypePlace t = (TypePlace) n;
+                double res = t.getPrix();
                 return res;
         } finally {
             if (ouvert && c != null) c.close();                            // je ferme seulement ce que j'ai ouvert
