@@ -109,8 +109,7 @@ public class Seance extends ClassMAPTable {
     try {
         if (c == null) { c = new UtilDB().GetConn(); ouvert = true; }   // j'ouvre si on ne m'a rien donné
         // ... le travail, en passant TOUJOURS c ...
-        Object n = CGenUtil.rechercherSimple("select * from SEANCE where id = '"
-                + CinemaUtil.echapper(idRes) + "'", c);
+        Seance n = CinemaUtil.parId(new Seance(),c,idRes);
                 Seance res = (Seance) n;
         return res;
     } finally {
