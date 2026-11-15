@@ -61,9 +61,8 @@ public class TypePlace extends ClassMAPTable {
         boolean ouvert = false;
         try {
             if (c == null) { c = new UtilDB().GetConn(); ouvert = true; }   // j'ouvre si on ne m'a rien donné
-            Object n = CGenUtil.rechercherSimple("select prix from TYPEPLACE where id = '"
-                + CinemaUtil.echapper(idTypePlace) + "'", c);
-                double res = ((Number) n).doubleValue();
+            Object n = CinemaUtil.parId(new TypePlace(),idTypePlace,c);
+                double res = ((Number) n.getPrix()).doubleValue();
                 return res;
         } finally {
             if (ouvert && c != null) c.close();                            // je ferme seulement ce que j'ai ouvert

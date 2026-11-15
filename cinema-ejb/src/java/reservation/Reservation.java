@@ -150,8 +150,7 @@ public class Reservation extends ClassMere {
     try {
         if (c == null) { c = new UtilDB().GetConn(); ouvert = true; }   // j'ouvre si on ne m'a rien donné
         // ... le travail, en passant TOUJOURS c ...
-        Object n = CGenUtil.rechercherSimple("select * from RESERVATION where id = '"
-                + CinemaUtil.echapper(idRes) + "'", c);
+        Object n = CinemaUtil.parId(new Reservation(),idRes,c);
                 Reservation res = (Reservation) n;
         return res;
     } finally {
