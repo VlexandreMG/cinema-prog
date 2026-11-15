@@ -210,7 +210,7 @@ public class ReservationService {
                 val += Place.getIdtypeplaceByIdPlace(c ,d.getIdplace());
             }
             r.setFille(lignes);
-            Seance sc = Seance.getSeanceByIdReservation(c,r.getId());
+            Seance sc = Seance.getSeanceByIdReservation(c,idSeance);
             if ( Integer.parseInt(sc.getHeure()) > Integer.parseInt("20:00")) {
                 r.setMontanttotal(val * 0.5);
             } else {

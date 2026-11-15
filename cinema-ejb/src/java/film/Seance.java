@@ -109,7 +109,7 @@ public class Seance extends ClassMAPTable {
     try {
         if (c == null) { c = new UtilDB().GetConn(); ouvert = true; }   // j'ouvre si on ne m'a rien donné
         // ... le travail, en passant TOUJOURS c ...
-        Seance n = CinemaUtil.parId(new Seance(),c,idRes);
+        Object n = CinemaUtil.parId(new Seance(),idRes,c);
                 Seance res = (Seance) n;
         return res;
     } finally {
