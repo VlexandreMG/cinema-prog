@@ -105,7 +105,7 @@ public class Reservation extends ClassMere {
         // Payee tout de suite : la reservation est enregistree VALIDEE (11).
         // Sans cette ligne, etat vaudrait 0 (= annulee) et ses places resteraient "libres".
         this.setEtat(ConstanteEtat.getEtatValider());
-        if (CinemaUtil.minutesDepuisMinuit(seance.getHeure()) >= CinemaUtil.minutesDepuisMinuit("20.00")) {
+        if (CinemaUtil.minutesDepuisMinuit(seance.getHeure()) >= CinemaUtil.minutesDepuisMinuit("20:00")) {
             this.setMontanttotal(total * 0.5);
         }else {
         this.setMontanttotal(total);
