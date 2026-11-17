@@ -7,6 +7,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import reservation.Reservation;
+import reservation.ReservationDetail;
 import reservation.ReservationService;
 import utilitaire.UtilDB;
 import utils.CinemaUtil;
@@ -42,6 +43,7 @@ public class FactureService {
             // ReservationLib r = ReservationService.chargerReservation(idReservation, c);
             Reservation r = Reservation.getReservationByIdReservation(c,idReservation);
             // ReservationDetailLib[] places = ReservationService.listerLignes(idReservation, c);
+            ReservationDetail[] places =  (ReservationDetail[]) r.getFille(null,c,"");
 
             // 2. La mère : les textes de l'en-tête sont RECOPIÉS (la facture est figée)
             String objet = r.getMontanttotal() + " — " + CinemaUtil.date(r.getDaty());
@@ -52,6 +54,15 @@ public class FactureService {
 
             // 3. Une ligne par place : désignation recopiée + prix PAYÉ (celui de RESERVATIONDETAIL)
             
+            ClassFille[] lignes = new ClassFille[places.length];
+            for (int i=0; i < places.length; i++) {
+                FactureDetail d = new FactureDetail();
+                d.setDesignation("C'est une designation");
+                d.setPrix(places[i].getPrix());
+                lignes[i] = d;
+            }
+            f.setFille(lignes);
+
 
             // ClassFille[] lignes = new ClassFille[places.length];
             // for (int i = 0; i < places.length; i++) {
