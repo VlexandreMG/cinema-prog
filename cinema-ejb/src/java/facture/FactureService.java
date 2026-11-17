@@ -62,7 +62,7 @@ public class FactureService {
 
             // ClassFille[] lignes = new ClassFille[places.length];
             // for (int i = 0; i < places.length; i++) {
-            //     FactureDetail d = new FactureDetail();                 // ni id, ni idfacture : APJ les remplit
+            //     FactureDetail d = new FactureDetail();                 
             //     d.setDesignation(objet + " — Place " + places[i].getNumero()
             //             + " (" + places[i].getTypeplace() + ")");
             //     d.setPrix(places[i].getPrix());
