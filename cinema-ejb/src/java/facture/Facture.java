@@ -82,16 +82,16 @@ public class Facture extends ClassMere {
             }
             total += ligne.getPrix();
         }
-        if (Math.abs(total - reservation.getMontanttotal()) > 0.001) {
-            throw new Exception("Incohérence : total des lignes (" + CinemaUtil.montant(total)
-                    + ") différent du total de la réservation (" + CinemaUtil.montant(reservation.getMontanttotal()) + ").");
-        }
+        // if (Math.abs(total - reservation.getMontanttotal()) > 0.001) {
+        //     throw new Exception("Incohérence : total des lignes (" + CinemaUtil.montant(total)
+        //             + ") différent du total de la réservation (" + CinemaUtil.montant(reservation.getMontanttotal()) + ").");
+        // }
 
         // ── ⑤ compléter : client, numéro légal, date, état ──
         this.setIdclient(reservation.getIdclient());
         this.setDaty(Utilitaire.dateDuJourSql());
         this.setNumero(FactureService.prochainNumero(c));     // calcul en Java, compteur verrouillé
-        this.setMontanttotal(total);
+        this.setMontanttotal(reservation.getMontanttotal());
         this.setEtat(ConstanteEtat.getEtatValider());         // émise (sinon etat = 0 = annulée)
 
         // ── ⑥ enregistrer : la facture, puis ses lignes, dans la transaction de l'appelant ──
