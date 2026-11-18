@@ -53,6 +53,7 @@ try {
     // ── RÉGLAGES DES LIGNES ──
     Champ.setVisible(p.getFormufle().getChampFille("idreservation"), false);
     Champ.setVisible(p.getFormufle().getChampFille("prix"), false);
+    Champ.setVisible(p.getFormufle().getChampFille("id"), false);
 
     Liste[] listesFille = new Liste[1];
     listesFille[0] = new Liste("idplace", new PlaceSeanceLib(), "libelle", "id", " and 1 = 2");
@@ -68,7 +69,6 @@ try {
     p.getFormu().getChamp("idseance").setAutre("onchange=\"" + js + "\"");
 
     p.getFormufle().getChamp("idplace_0").setLibelle("Place");
-    Champ.setVisible(p.getFormufle().getChampFille("id"), false);
 
     // Maka en base ny données ilainy 
     p.preparerDataFormu();
