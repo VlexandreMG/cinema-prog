@@ -42,6 +42,8 @@ try {
     p.preparerDataFormu();
     // Ecris le html de l'input mais le garde dans p 
     p.getFormu().makeHtmlInsertTabIndex();
+    p.getFormufle().makeHtmlInsertTableauIndex();
+
 
 %>
 <div class="content-wrapper">
@@ -49,6 +51,9 @@ try {
 
     <%-- ── AFFICHAGE : ici, on construira le formulaire ── --%>
     <%= p.getFormu().getHtmlInsert() %>
+
+    <h3>Places</h3>
+    <%= p.getFormufle().getHtmlTableauInsert() %>
 
 </div>
 <%
