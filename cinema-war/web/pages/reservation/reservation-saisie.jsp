@@ -1,4 +1,4 @@
-<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>1c
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 
 <%@ page import="affichage.PageInsertMultiple" %>
 <%@ page import="reservation.Reservation, reservation.ReservationDetail" %>
@@ -15,16 +15,24 @@ try {
     Reservation r = new Reservation();
     ReservationDetail rd = new ReservationDetail();
 
+    // Comment ça 5 lignes
     int nbLigne = 5;
 
     PageInsertMultiple p = new PageInsertMultiple(r,rd,request,nbLigne,u);
-    
+    // Pour que l'APJ créé ses propres liens
+    p.setLien(lien);
+
+    // Maka en base ny données ilainy 
+    p.preparerDataFormu();
+    // Ecris le html de l'input mais le garde dans p 
+    p.getFormu().makeHtmlInsertTabIndex();
 
 %>
 <div class="content-wrapper">
     <h1>R&eacute;server des places</h1>
 
     <%-- ── AFFICHAGE : ici, on construira le formulaire ── --%>
+    <%= p.getFormu().getHtmlInsert() %>
 
 </div>
 <%
