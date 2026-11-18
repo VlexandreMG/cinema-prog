@@ -47,6 +47,13 @@ try {
 
     <%-- ── AFFICHAGE ── --%>
     <%= pc.getHtml() %>                                            <%-- ④ --%>
+    <% if (r.getEtat() < 11) { %>
+        <a class="btn btn-primary"
+           href="<%= lien %>?but=apresMultiple.jsp&acte=valider&id=<%= r.getId() %>&classe=reservation.Reservation&bute=reservation/reservation-fiche.jsp">
+            Viser (encaisser)
+        </a>
+    <% } %>
+
     <h3>Places</h3>
     <%= pr.getTableau().getHtml() %>
 
