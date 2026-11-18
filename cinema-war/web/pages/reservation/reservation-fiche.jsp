@@ -14,7 +14,20 @@ try {
     PageConsulte pc = new PageConsulte(r, request, u);            // ②
     r = (ReservationLib) pc.getBase();                            // ③
 
-    // ── RÉGLAGES (à venir) ──
+        // ── RÉGLAGES ──
+    pc.getChampByName("idclient").setVisible(false);
+    pc.getChampByName("idseance").setVisible(false);
+    pc.getChampByName("idfilm").setVisible(false);
+
+    pc.getChampByName("id").setLibelle("R&eacute;f&eacute;rence");
+    pc.getChampByName("client").setLibelle("Client");
+    pc.getChampByName("film").setLibelle("Film");
+    pc.getChampByName("salle").setLibelle("Salle");
+    pc.getChampByName("dateseance").setLibelle("Date de la s&eacute;ance");
+    pc.getChampByName("heure").setLibelle("Heure");
+    pc.getChampByName("daty").setLibelle("R&eacute;serv&eacute;e le");
+    pc.getChampByName("montanttotal").setLibelle("Montant (Ar)");
+    pc.getChampByName("etat").setLibelle("&Eacute;tat");
 
 %>
 <div class="content-wrapper">

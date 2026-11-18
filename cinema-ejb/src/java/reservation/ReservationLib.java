@@ -2,12 +2,13 @@ package reservation;
 
 import bean.ClassMAPTable;
 import java.sql.Date;
+import bean.ClassEtat;
 
 /**
  * Une reservation avec les libelles utiles a l'ecran (client, film, salle, seance).
  * Lecture seule : elle lit la vue RESERVATION_LIB.
  */
-public class ReservationLib extends ClassMAPTable {
+public class ReservationLib extends ClassEtat {
 
     private String id;
     private String idclient;
