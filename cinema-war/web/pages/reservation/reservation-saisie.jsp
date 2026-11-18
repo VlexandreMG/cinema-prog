@@ -35,6 +35,7 @@ try {
     Liste[] listes = new Liste[2];
     listes[0] = new Liste("idclient", new Client(), "nom", "id");
     listes[1] = new Liste("idseance", new SeanceLib(), "libelle", "id", " and daty >= trunc(sysdate)");
+    listes[1].ajouterVide();
     p.getFormu().changerEnChamp(listes);
 
     p.getFormu().getChamp("idclient").setLibelle("Client");
@@ -47,6 +48,15 @@ try {
     Liste[] listesFille = new Liste[1];
     listesFille[0] = new Liste("idplace", new PlaceSeanceLib(), "libelle", "id", " and 1 = 2");
     p.getFormufle().changerEnChamp(listesFille);
+
+        // ③ Quand la séance change : recharger les places libres de CETTE séance, sur chaque ligne.
+    //    dependante(...) = fonction JS de l'APJ (pages/elements/js.jsp) -> servlet /Deroulante
+    //    -> select * from PLACE_SEANCE_LIB where idseance = <séance choisie>
+    String js = "";
+    for (int i = 0; i < nbLigne; i++) {
+        js += "dependante(this.value, 'idplace_" + i + "', 'PLACE_SEANCE_LIB', 'salle.PlaceSeanceLib', 'idseance', 'id', 'libelle');";
+    }
+    p.getFormu().getChamp("idseance").setAutre("onchange=\"" + js + "\"");
 
     p.getFormufle().getChamp("idplace_0").setLibelle("Place");
 
