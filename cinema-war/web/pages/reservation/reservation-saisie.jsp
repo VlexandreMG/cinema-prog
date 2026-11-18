@@ -68,6 +68,7 @@ try {
     p.getFormu().getChamp("idseance").setAutre("onchange=\"" + js + "\"");
 
     p.getFormufle().getChamp("idplace_0").setLibelle("Place");
+    Champ.setVisible(p.getFormufle().getChampFille("id"), false);
 
     // Maka en base ny données ilainy 
     p.preparerDataFormu();
