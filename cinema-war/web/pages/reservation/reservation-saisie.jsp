@@ -22,6 +22,11 @@ try {
     // Pour que l'APJ créé ses propres liens
     p.setLien(lien);
 
+    // ── RÉGLAGES DE L'EN-TÊTE ──
+    p.getFormu().getChamp("daty").setVisible(false);
+    p.getFormu().getChamp("montanttotal").setVisible(false);
+    p.getFormu().getChamp("etat").setVisible(false);
+
     // Maka en base ny données ilainy 
     p.preparerDataFormu();
     // Ecris le html de l'input mais le garde dans p 
