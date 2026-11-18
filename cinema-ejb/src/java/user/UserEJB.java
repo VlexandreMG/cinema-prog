@@ -103,4 +103,7 @@ public interface UserEJB {
     public ClassMAPTable[] getDataPage(ClassMAPTable e, String requete, Connection c) throws Exception;
 
     public Societe getMaSociete() ;
+
+    public Object createObjectMultiple(ClassMAPTable mere, String colonneMere, ClassMAPTable[] fille) throws Exception;
+
 }

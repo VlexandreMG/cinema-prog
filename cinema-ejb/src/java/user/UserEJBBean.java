@@ -523,6 +523,42 @@ public class UserEJBBean implements UserEJB {
         }
     }
 
+        /**
+     * Crée une mère et ses lignes dans UNE transaction (appelée par apresMultiple.jsp).
+     * Les lignes sont attachées à la mère, puis createObject(mere) les insère avec elle.
+     * Une exception n'importe où → rollback : rien n'est gardé.
+     *
+     * @param colonneMere gardé pour la compatibilité avec apresMultiple (la liaison vient de setLiaisonFille)
+     * @return la mère créée, avec son id
+     */
+    @Override
+    public Object createObjectMultiple(ClassMAPTable mere, String colonneMere, ClassMAPTable[] fille) throws Exception {
+        if (!(mere instanceof ClassMere)) {
+            throw new Exception(mere.getClass().getName() + " n'est pas une ClassMere : elle ne peut pas avoir de lignes.");
+        }
+        Connection c = null;
+        try {
+            c = new UtilDB().GetConn();                         // ① une connexion à nous
+            c.setAutoCommit(false);                             //    rien n'est validé tant qu'on ne dit pas commit
+
+            ClassFille[] lignes = new ClassFille[fille.length]; // ② attacher les lignes à la mère
+            for (int i = 0; i < fille.length; i++) {
+                lignes[i] = (ClassFille) fille[i];
+            }
+            ((ClassMere) mere).setFille(lignes);
+
+            Object ret = createObject(mere, c);                 // ③ droits + Reservation.createObject + INSERT mère et lignes
+            c.commit();                                         // ④ tout s'est bien passé : on garde
+            return ret;
+        } catch (Exception ex) {
+            if (c != null) c.rollback();                        // ⑤ une erreur : on annule TOUT
+            throw ex;                                           //    et on la renvoie à apresMultiple (→ alerte)
+        } finally {
+            if (c != null) c.close();
+        }
+    }
+
+
     /**
      * Modifier un objet avec trace de la personne modifiant avec initialisation
      * interne de la base de données
