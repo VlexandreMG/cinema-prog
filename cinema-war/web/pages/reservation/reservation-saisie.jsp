@@ -35,6 +35,9 @@ try {
     listes[1] = new Liste("idseance", new SeanceLib(), "libelle", "id", " and daty >= trunc(sysdate)");
     p.getFormu().changerEnChamp(listes);
 
+    p.getFormu().getChamp("idclient").setLibelle("Client");
+    p.getFormu().getChamp("idseance").setLibelle("S&eacute;ance");
+
     // Maka en base ny données ilainy 
     p.preparerDataFormu();
     // Ecris le html de l'input mais le garde dans p 
