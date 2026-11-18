@@ -1,6 +1,8 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 
 <%@ page import="affichage.PageInsertMultiple" %>
+<%@ page import="affichage.Liste" %>
+<%@ page import="client.Client" %>
 <%@ page import="reservation.Reservation, reservation.ReservationDetail" %>
 <%@ page import="user.UserEJB" %>
 
@@ -26,6 +28,10 @@ try {
     p.getFormu().getChamp("daty").setVisible(false);
     p.getFormu().getChamp("montanttotal").setVisible(false);
     p.getFormu().getChamp("etat").setVisible(false);
+
+    Liste[] listes = new Liste[1];
+    listes[0] = new Liste("idclient", new Client(), "nom", "id");
+    p.getFormu().changerEnChamp(listes);
 
     // Maka en base ny données ilainy 
     p.preparerDataFormu();
