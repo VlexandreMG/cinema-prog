@@ -5,6 +5,7 @@
 <%@ page import="affichage.Champ" %>
 <%@ page import="client.Client" %>
 <%@ page import="film.SeanceLib" %>
+<%@ page import="film.Film" %>
 <%@ page import="salle.PlaceSeanceLib" %>
 <%@ page import="reservation.Reservation, reservation.ReservationDetail" %>
 <%@ page import="user.UserEJB" %>
@@ -32,14 +33,22 @@ try {
     p.getFormu().getChamp("montanttotal").setVisible(false);
     p.getFormu().getChamp("etat").setVisible(false);
 
-    Liste[] listes = new Liste[2];
+    // Un champ "film" qui n'est PAS dans Reservation : il sert seulement à filtrer les séances
+    p.getFormu().ajouterChamp(new String[]{"idfilm"});
+
+    Liste[] listes = new Liste[3];
     listes[0] = new Liste("idclient", new Client(), "nom", "id");
     listes[1] = new Liste("idseance", new SeanceLib(), "libelle", "id", " and daty >= trunc(sysdate)");
-    listes[1].ajouterVide();
+    listes[2] = new Liste("idfilm", new Film(), "titre", "id");
+    listes[2].ajouterVide();
+    listes[2].setDeroulanteDependante(listes[1], "idfilm", "onchange"); 
     p.getFormu().changerEnChamp(listes);
 
     p.getFormu().getChamp("idclient").setLibelle("Client");
     p.getFormu().getChamp("idseance").setLibelle("S&eacute;ance");
+    p.getFormu().getChamp("idfilm").setLibelle("Film");
+    p.getFormu().setOrdre(new String[]{"idclient", "idfilm", "idseance"});
+
 
     // ── RÉGLAGES DES LIGNES ──
     Champ.setVisible(p.getFormufle().getChampFille("idreservation"), false);
