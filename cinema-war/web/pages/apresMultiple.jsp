@@ -45,4 +45,4 @@ try {
     String msg = e.getMessage() == null ? "Erreur" : e.getMessage().replace("\\", "\\\\").replace("'", "\\'").replace("\n", " ");
 %>
 <script>alert('<%= msg %>'); history.back();</script>
-<% } %>
+<% } %> 
