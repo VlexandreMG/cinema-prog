@@ -5,6 +5,7 @@
 <%@ page import="affichage.Champ" %>
 <%@ page import="client.Client" %>
 <%@ page import="film.SeanceLib" %>
+<%@ page import="salle.PlaceSeanceLib" %>
 <%@ page import="reservation.Reservation, reservation.ReservationDetail" %>
 <%@ page import="user.UserEJB" %>
 
@@ -42,8 +43,12 @@ try {
     // ── RÉGLAGES DES LIGNES ──
     Champ.setVisible(p.getFormufle().getChampFille("idreservation"), false);
     Champ.setVisible(p.getFormufle().getChampFille("prix"), false);
-    p.getFormufle().getChamp("idplace_0").setLibelle("Place");
 
+    Liste[] listesFille = new Liste[1];
+    listesFille[0] = new Liste("idplace", new PlaceSeanceLib(), "libelle", "id", " and 1 = 2");
+    p.getFormufle().changerEnChamp(listesFille);
+
+    p.getFormufle().getChamp("idplace_0").setLibelle("Place");
 
     // Maka en base ny données ilainy 
     p.preparerDataFormu();
