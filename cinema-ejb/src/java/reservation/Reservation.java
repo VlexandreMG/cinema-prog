@@ -1,6 +1,9 @@
 package reservation;
 
 import bean.CGenUtil;
+import caisse.CaisseService;
+import facture.Facture;
+import facture.FactureService;
 import bean.ClassMAPTable;
 import bean.ClassMere;
 import client.Client;
@@ -102,15 +105,32 @@ public class Reservation extends ClassMere {
         }
 
         this.setDaty(Utilitaire.dateDuJourSql());
-        // Payee tout de suite : la reservation est enregistree VALIDEE (11).
-        // Sans cette ligne, etat vaudrait 0 (= annulee) et ses places resteraient "libres".
-        this.setEtat(ConstanteEtat.getEtatValider());
+        // Enregistrée CRÉÉE (1) : les places sont bloquées, mais rien n'est encore payé.
+        // Le paiement (facture + caisse) se fera au VISA (validerObject → 11).
+        // Sans cette ligne, etat vaudrait 0 (= annulée) et ses places resteraient "libres".
+        this.setEtat(ConstanteEtat.getEtatCreer());
         if (CinemaUtil.minutesDepuisMinuit(seance.getHeure()) >= CinemaUtil.minutesDepuisMinuit("20:00")) {
             this.setMontanttotal(total * 0.5);
         }else {
         this.setMontanttotal(total);
         }
         return super.createObject(u, c);   // INSERT de la mere, puis des lignes, dans la meme transaction
+    }
+
+    /**
+     * VISER la réservation = l'encaisser.
+     * Appelée par l'APJ (u.validerObject → ValiderObject → viser), dans SA transaction.
+     * 1. super : état 1 → 11, UPDATE + historique
+     * 2. la facture (elle exige une réservation à 11 : on la fait donc APRÈS)
+     * 3. l'encaissement de la facture
+     * Une erreur n'importe où → rollback : ni visa, ni facture, ni argent.
+     */
+    @Override
+    public Object validerObject(String u, Connection c) throws Exception {
+        Object ret = super.validerObject(u, c);
+        Facture facture = FactureService.genererFacture(this.getId(), u, c);
+        CaisseService.encaisserFacture(facture.getId(), u, c);
+        return ret;
     }
 
     /**
