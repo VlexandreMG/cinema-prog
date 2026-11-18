@@ -1,6 +1,6 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-<%@ page import="affichage.PageConsulte" %>
-<%@ page import="reservation.ReservationLib" %>
+<%@ page import="affichage.PageConsulte, affichage.PageRecherche" %>
+<%@ page import="reservation.ReservationLib, reservation.ReservationDetailLib" %>
 <%@ page import="user.UserEJB" %>
 <%
 try {
@@ -14,7 +14,19 @@ try {
     PageConsulte pc = new PageConsulte(r, request, u);            // ②
     r = (ReservationLib) pc.getBase();                            // ③
 
-        // ── RÉGLAGES ──
+    // ── LES PLACES DE LA RÉSERVATION ──
+    String[] colonnes = {"numero", "typeplace", "prix"};                                     // ①
+    PageRecherche pr = new PageRecherche(new ReservationDetailLib(), request,
+                                         new String[]{}, new String[]{}, 3,
+                                         colonnes, colonnes.length);                         // ②
+    pr.setUtilisateur(u);                                                                    // ③
+    pr.setLien(lien);
+    pr.setAWhere(" and idreservation = '" + r.getId() + "'");                                // ④
+    pr.creerObjetPage(colonnes, new String[]{"prix"});                                       // ⑤
+    pr.getTableau().setLibelleAffiche(new String[]{"Place", "Type", "Prix (Ar)"});           // ⑥
+
+
+    // ── RÉGLAGES ──
     pc.getChampByName("idclient").setVisible(false);
     pc.getChampByName("idseance").setVisible(false);
     pc.getChampByName("idfilm").setVisible(false);
@@ -35,6 +47,9 @@ try {
 
     <%-- ── AFFICHAGE ── --%>
     <%= pc.getHtml() %>                                            <%-- ④ --%>
+    <h3>Places</h3>
+    <%= pr.getTableau().getHtml() %>
+
 </div>
 <%
 } catch (Exception e) {
