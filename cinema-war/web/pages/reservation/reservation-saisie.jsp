@@ -2,6 +2,7 @@
 
 <%@ page import="affichage.PageInsertMultiple" %>
 <%@ page import="affichage.Liste" %>
+<%@ page import="affichage.Champ" %>
 <%@ page import="client.Client" %>
 <%@ page import="film.SeanceLib" %>
 <%@ page import="reservation.Reservation, reservation.ReservationDetail" %>
@@ -37,6 +38,12 @@ try {
 
     p.getFormu().getChamp("idclient").setLibelle("Client");
     p.getFormu().getChamp("idseance").setLibelle("S&eacute;ance");
+
+    // ── RÉGLAGES DES LIGNES ──
+    Champ.setVisible(p.getFormufle().getChampFille("idreservation"), false);
+    Champ.setVisible(p.getFormufle().getChampFille("prix"), false);
+    p.getFormufle().getChamp("idplace_0").setLibelle("Place");
+
 
     // Maka en base ny données ilainy 
     p.preparerDataFormu();
