@@ -1,6 +1,7 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ page import="affichage.PageConsulte, affichage.PageRecherche" %>
 <%@ page import="reservation.ReservationLib, reservation.ReservationDetailLib" %>
+<%@ page import="facture.Facture, facture.FactureService" %>
 <%@ page import="user.UserEJB" %>
 <%
 try {
@@ -13,6 +14,9 @@ try {
     ReservationLib r = new ReservationLib();                      // ①
     PageConsulte pc = new PageConsulte(r, request, u);            // ②
     r = (ReservationLib) pc.getBase();                            // ③
+ 
+    // La facture n'existe qu'après le visa : null tant que la réservation n'est pas visée
+    Facture facture = FactureService.factureDeLaReservation(r.getId(), null);
 
     // ── LES PLACES DE LA RÉSERVATION ──
     String[] colonnes = {"numero", "typeplace", "prix"};                                     // ①
@@ -53,6 +57,14 @@ try {
             Viser (encaisser)
         </a>
     <% } %>
+
+    <% if (facture != null) { %>
+        <a class="btn btn-success"
+           href="<%= lien %>?but=facture/facture-fiche.jsp&id=<%= facture.getId() %>">
+            Voir la facture N&deg; <%= facture.getNumero() %>
+        </a>
+    <% } %>
+
 
     <h3>Places</h3>
     <%= pr.getTableau().getHtml() %>
