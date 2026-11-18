@@ -3,6 +3,7 @@
 <%@ page import="affichage.PageInsertMultiple" %>
 <%@ page import="affichage.Liste" %>
 <%@ page import="client.Client" %>
+<%@ page import="film.SeanceLib" %>
 <%@ page import="reservation.Reservation, reservation.ReservationDetail" %>
 <%@ page import="user.UserEJB" %>
 
@@ -29,8 +30,9 @@ try {
     p.getFormu().getChamp("montanttotal").setVisible(false);
     p.getFormu().getChamp("etat").setVisible(false);
 
-    Liste[] listes = new Liste[1];
+    Liste[] listes = new Liste[2];
     listes[0] = new Liste("idclient", new Client(), "nom", "id");
+    listes[1] = new Liste("idseance", new SeanceLib(), "libelle", "id", " and daty >= trunc(sysdate)");
     p.getFormu().changerEnChamp(listes);
 
     // Maka en base ny données ilainy 
