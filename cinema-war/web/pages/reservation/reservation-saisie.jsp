@@ -82,11 +82,20 @@ try {
     <h1>R&eacute;server des places</h1>
 
     <%-- ── AFFICHAGE : ici, on construira le formulaire ── --%>
+    <form action="<%= lien %>?but=apresMultiple.jsp" method="post">
     <%= p.getFormu().getHtmlInsert() %>
 
     <h3>Places</h3>
     <%= p.getFormufle().getHtmlTableauInsert() %>
 
+        <input type="hidden" name="acte"        value="insert">
+        <input type="hidden" name="bute"        value="reservation/reservation-fiche.jsp">
+        <input type="hidden" name="classe"      value="reservation.Reservation">
+        <input type="hidden" name="classefille" value="reservation.ReservationDetail">
+        <input type="hidden" name="nomtable"    value="RESERVATIONDETAIL">
+        <input type="hidden" name="nombreLigne" value="<%= nbLigne %>">
+        <input type="hidden" name="colonneMere" value="idreservation">
+    </form>
 </div>
 <%
 } catch (Exception e) {
