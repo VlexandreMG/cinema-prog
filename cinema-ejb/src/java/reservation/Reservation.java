@@ -8,6 +8,7 @@ import bean.ClassMAPTable;
 import bean.ClassMere;
 import client.Client;
 import constante.ConstanteEtat;
+import reservation.Remise;
 import film.Film;
 import film.Seance;
 import java.sql.Connection;
@@ -97,6 +98,8 @@ public class Reservation extends ClassMere {
             if (estReservee(place.getId(), seance.getId(), c)) {
                 throw new Exception("La place " + place.getNumero() + " est déjà réservée pour cette séance.");
             }
+
+            
 
             // Le prix vient du type de la place, cote serveur (on ne fait pas confiance a l'ecran)
             TypePlace type = (TypePlace) CinemaUtil.parId(new TypePlace(), place.getIdtypeplace(), c);

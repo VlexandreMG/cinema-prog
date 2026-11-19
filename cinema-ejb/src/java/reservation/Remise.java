@@ -2,6 +2,9 @@ package reservation;
 
 import bean.ClassMAPTable;
 import java.sql.Connection;
+import utils.CinemaUtil;
+import utilitaire.UtilDB;
+
 
 /**
  * Une remise entre types de place. Table REMISE.
@@ -61,4 +64,18 @@ public class Remise extends ClassMAPTable {
 
     public String getCatrem() { return catrem; }
     public void setCatrem(String catrem) { this.catrem = catrem; }
-}
+
+    public static Remise getRemisByIdTypePlace(Connection c , String idRes) throws Exception {
+             boolean ouvert = false;
+    try {
+        if (c == null) { c = new UtilDB().GetConn(); ouvert = true; }   // j'ouvre si on ne m'a rien donné
+        // ... le travail, en passant TOUJOURS c ...
+        Object n = CinemaUtil.parId(new Remise(),idRes,c);
+                Remise res = (Remise) n;
+        return res;
+    } finally {
+        if (ouvert && c != null) c.close();                            // je ferme seulement ce que j'ai ouvert
+    }
+    }
+    }
+
