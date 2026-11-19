@@ -99,7 +99,11 @@ public class Reservation extends ClassMere {
                 throw new Exception("La place " + place.getNumero() + " est déjà réservée pour cette séance.");
             }
 
-            
+            Remise r = Remise.getRemisByIdTypePlace(c,ligne.getIdplace());
+
+            if (((r.getNombre()) == lignes.length) && r.getCatres() == place.getIdtypeplace()) {
+
+            }
 
             // Le prix vient du type de la place, cote serveur (on ne fait pas confiance a l'ecran)
             TypePlace type = (TypePlace) CinemaUtil.parId(new TypePlace(), place.getIdtypeplace(), c);
