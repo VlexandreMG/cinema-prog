@@ -8,6 +8,14 @@
 
 -- ---------- Tables ----------
 
+CREATE TABLE REMISE (
+  id VARCHAR2(100) PRIMARY KEY,
+  nombre INT NOT NULL,
+  valeur NUMBER(15,2) NOT NULL,
+  catres VARCHAR2(100) NOT NULL,
+  catrem VARCHAR2(100) NOT NULL
+);
+
 CREATE TABLE SALLE (
   id   VARCHAR2(100) PRIMARY KEY,
   nom  VARCHAR2(100) NOT NULL
