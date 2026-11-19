@@ -1,3 +1,4 @@
+-- Active: 1794266528165@@@443@EE@CINEMA
 -- ============================================================
 -- Cinema : les remises entre types de place (table REMISE)
 -- A executer apres 06_places.sql (les types de place doivent exister,
