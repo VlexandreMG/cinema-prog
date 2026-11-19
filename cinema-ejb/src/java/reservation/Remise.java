@@ -65,6 +65,16 @@ public class Remise extends ClassMAPTable {
     public String getCatrem() { return catrem; }
     public void setCatrem(String catrem) { this.catrem = catrem; }
 
+    /**
+     * Les remises qui se déclenchent quand on réserve des places du type idTypePlace (catres = idTypePlace).
+     * Tableau vide s'il n'y en a aucune.
+     */
+    public static Remise[] listerParTypeReserve(String idTypePlace, Connection c) throws Exception {
+        Object[] res = bean.CGenUtil.rechercher(new Remise(), null, null, c,
+                " and catres = '" + CinemaUtil.echapper(idTypePlace) + "'");
+        return (Remise[]) res;
+    }
+
     public static Remise getRemisByIdTypePlace(Connection c , String idRes) throws Exception {
              boolean ouvert = false;
     try {

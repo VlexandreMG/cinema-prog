@@ -13,7 +13,9 @@ import film.Film;
 import film.Seance;
 import java.sql.Connection;
 import java.sql.Date;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import salle.Place;
 import salle.TypePlace;
@@ -84,6 +86,26 @@ public class Reservation extends ClassMere {
             throw new Exception("Choisissez au moins une place.");
         }
 
+        // ── REMISES : AVANT le calcul des prix, pour que cette réservation profite déjà du nouveau prix ──
+        // 1. Compter les places réservées par type : { "1" → 3, "2" → 1 }
+        Map<String, Integer> nbParType = new HashMap<String, Integer>();
+        for (ReservationDetail ligne : lignes) {
+            Place p = (Place) CinemaUtil.parId(new Place(), ligne.getIdplace(), c);
+            Integer n = nbParType.get(p.getIdtypeplace());
+            nbParType.put(p.getIdtypeplace(), n == null ? 1 : n + 1);
+        }
+        // 2. Pour chaque type réservé, ses remises : si on a réservé EXACTEMENT "nombre" places de ce type,
+        //    le prix du type catrem baisse de "valeur" % dans TYPEPLACE (pour tout le monde, définitivement)
+        for (Map.Entry<String, Integer> e : nbParType.entrySet()) {
+            for (Remise r : Remise.listerParTypeReserve(e.getKey(), c)) {
+                if (e.getValue() == r.getNombre()) {
+                    TypePlace aRemiser = (TypePlace) CinemaUtil.parId(new TypePlace(), r.getCatrem(), c);
+                    aRemiser.setPrix(aRemiser.getPrix() * (1 - r.getValeur() / 100));
+                    aRemiser.updateToTableWithHisto(u, c);      // UPDATE TYPEPLACE, dans la même transaction
+                }
+            }
+        }
+
         double total = 0;
         Set<String> dejaChoisies = new HashSet<String>();
         for (ReservationDetail ligne : lignes) {
@@ -97,12 +119,6 @@ public class Reservation extends ClassMere {
             }
             if (estReservee(place.getId(), seance.getId(), c)) {
                 throw new Exception("La place " + place.getNumero() + " est déjà réservée pour cette séance.");
-            }
-
-            Remise r = Remise.getRemisByIdTypePlace(c,ligne.getIdplace());
-
-            if (((r.getNombre()) == lignes.length) && r.getCatres() == place.getIdtypeplace()) {
-
             }
 
             // Le prix vient du type de la place, cote serveur (on ne fait pas confiance a l'ecran)
