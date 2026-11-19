@@ -86,7 +86,7 @@ public class Reservation extends ClassMere {
             throw new Exception("Choisissez au moins une place.");
         }
 
-        // ── REMISES : AVANT le calcul des prix, pour que cette réservation profite déjà du nouveau prix ──
+        // ── REMISES : AVANT le calcul des prix, pour que cette réservation en profite déjà ──
         // 1. Compter les places réservées par type : { "1" → 3, "2" → 1 }
         Map<String, Integer> nbParType = new HashMap<String, Integer>();
         for (ReservationDetail ligne : lignes) {
@@ -94,26 +94,25 @@ public class Reservation extends ClassMere {
             Integer n = nbParType.get(p.getIdtypeplace());
             nbParType.put(p.getIdtypeplace(), n == null ? 1 : n + 1);
         }
-        // 2. Pour chaque type réservé, ses remises : si on a réservé EXACTEMENT "nombre" places de ce type,
-        //    le prix du type catrem baisse de "valeur" % dans TYPEPLACE (pour tout le monde, définitivement)
+        // 2. ACTIVER les remises dont la condition est remplie : EXACTEMENT "nombre" places du type catres.
+        //    On ne touche pas à TYPEPLACE : la remise est appliquée ligne par ligne (étape 3 + boucle des lignes).
         for (Map.Entry<String, Integer> e : nbParType.entrySet()) {
             for (Remise r : Remise.listerParTypeReserve(e.getKey(), c)) {
-                if (e.getValue() != r.getNombre()) continue;
-
-                // Verrou + relecture : si deux guichets déclenchent la même remise en même temps,
-                // le second attend, puis voit qu'elle est déjà appliquée.
-                Object etat = CGenUtil.rechercherSimple("select etat from REMISE where id = '"
-                        + CinemaUtil.echapper(r.getId()) + "' for update", c);
-                if (((Number) etat).intValue() >= ConstanteEtat.getEtatValider()) continue;
-
-                TypePlace aRemiser = (TypePlace) CinemaUtil.parId(new TypePlace(), r.getCatrem(), c);
-                aRemiser.setPrix(aRemiser.getPrix() * (1 - r.getValeur() / 100));
-                aRemiser.updateToTableWithHisto(u, c);                 // le nouveau prix, pour les futures réservations
-
+                if (e.getValue() != r.getNombre()) continue;                     // condition non remplie
+                if (r.getEtat() >= ConstanteEtat.getEtatValider()) continue;      // déjà active
                 r.setEtat(ConstanteEtat.getEtatValider());
-                r.updateToTableWithHisto(u, c);                         // la remise est consommée
+                r.updateToTableWithHisto(u, c);                                  // active pour cette réservation et les suivantes
             }
         }
+
+        // 3. Les remises actives (celle qu'on vient d'activer comprise) : { type remisé → pourcentage }
+        //    Deux remises actives sur le même type : on garde la plus forte.
+        Map<String, Double> remiseParType = new HashMap<String, Double>();
+        for (Remise r : Remise.listerActives(c)) {
+            Double deja = remiseParType.get(r.getCatrem());
+            if (deja == null || r.getValeur() > deja) remiseParType.put(r.getCatrem(), r.getValeur());
+        }
+        Set<String> typesDejaRemises = new HashSet<String>();      // UNE seule place remisée par type
 
         double total = 0;
         Set<String> dejaChoisies = new HashSet<String>();
@@ -132,8 +131,14 @@ public class Reservation extends ClassMere {
 
             // Le prix vient du type de la place, cote serveur (on ne fait pas confiance a l'ecran)
             TypePlace type = (TypePlace) CinemaUtil.parId(new TypePlace(), place.getIdtypeplace(), c);
-            ligne.setPrix(type.getPrix());
-            total += type.getPrix();
+            double prix = type.getPrix();
+            Double remise = remiseParType.get(place.getIdtypeplace());
+            // add() renvoie true seulement la 1re fois pour ce type → seule la 1re place du type est remisée
+            if (remise != null && typesDejaRemises.add(place.getIdtypeplace())) {
+                prix = prix * (1 - remise / 100);
+            }
+            ligne.setPrix(prix);
+            total += prix;
         }
 
         this.setDaty(Utilitaire.dateDuJourSql());

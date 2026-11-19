@@ -18,7 +18,7 @@ public class Remise extends ClassMAPTable {
     private double valeur;
     private String catres;
     private String catrem;
-    private int etat;                 // 1 = pas encore appliquée, 11 = appliquée (ne se redéclenche plus)
+    private int etat;                 // 1 = condition jamais remplie, 11 = ACTIVE (une place remisée par réservation)
 
     public int getEtat() { return etat; }
     public void setEtat(int etat) { this.etat = etat; }
@@ -77,6 +77,12 @@ public class Remise extends ClassMAPTable {
     public static Remise[] listerParTypeReserve(String idTypePlace, Connection c) throws Exception {
         Object[] res = bean.CGenUtil.rechercher(new Remise(), null, null, c,
                 " and catres = '" + CinemaUtil.echapper(idTypePlace) + "'");
+        return (Remise[]) res;
+    }
+
+    /** Les remises déjà déclenchées (etat = 11) : elles s'appliquent à UNE place par réservation. */
+    public static Remise[] listerActives(Connection c) throws Exception {
+        Object[] res = bean.CGenUtil.rechercher(new Remise(), null, null, c, " and etat >= 11");
         return (Remise[]) res;
     }
 
