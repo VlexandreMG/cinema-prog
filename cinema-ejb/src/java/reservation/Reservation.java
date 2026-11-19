@@ -141,11 +141,9 @@ public class Reservation extends ClassMere {
         // Le paiement (facture + caisse) se fera au VISA (validerObject → 11).
         // Sans cette ligne, etat vaudrait 0 (= annulée) et ses places resteraient "libres".
         this.setEtat(ConstanteEtat.getEtatCreer());
-        if (CinemaUtil.minutesDepuisMinuit(seance.getHeure()) >= CinemaUtil.minutesDepuisMinuit("20:00")) {
-            this.setMontanttotal(total * 0.5);
-        }else {
+        
         this.setMontanttotal(total);
-        }
+        
         return super.createObject(u, c);   // INSERT de la mere, puis des lignes, dans la meme transaction
     }
 
