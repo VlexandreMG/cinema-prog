@@ -98,11 +98,20 @@ public class Reservation extends ClassMere {
         //    le prix du type catrem baisse de "valeur" % dans TYPEPLACE (pour tout le monde, définitivement)
         for (Map.Entry<String, Integer> e : nbParType.entrySet()) {
             for (Remise r : Remise.listerParTypeReserve(e.getKey(), c)) {
-                if (e.getValue() == r.getNombre()) {
-                    TypePlace aRemiser = (TypePlace) CinemaUtil.parId(new TypePlace(), r.getCatrem(), c);
-                    aRemiser.setPrix(aRemiser.getPrix() * (1 - r.getValeur() / 100));
-                    aRemiser.updateToTableWithHisto(u, c);      // UPDATE TYPEPLACE, dans la même transaction
-                }
+                if (e.getValue() != r.getNombre()) continue;
+
+                // Verrou + relecture : si deux guichets déclenchent la même remise en même temps,
+                // le second attend, puis voit qu'elle est déjà appliquée.
+                Object etat = CGenUtil.rechercherSimple("select etat from REMISE where id = '"
+                        + CinemaUtil.echapper(r.getId()) + "' for update", c);
+                if (((Number) etat).intValue() >= ConstanteEtat.getEtatValider()) continue;
+
+                TypePlace aRemiser = (TypePlace) CinemaUtil.parId(new TypePlace(), r.getCatrem(), c);
+                aRemiser.setPrix(aRemiser.getPrix() * (1 - r.getValeur() / 100));
+                aRemiser.updateToTableWithHisto(u, c);                 // le nouveau prix, pour les futures réservations
+
+                r.setEtat(ConstanteEtat.getEtatValider());
+                r.updateToTableWithHisto(u, c);                         // la remise est consommée
             }
         }
 
