@@ -29,3 +29,5 @@ COMMIT;
 -- Verification : chaque remise avec le libelle de ses deux types
 -- SELECT r.id, r.nombre, rs.libelle AS reserve, r.valeur || ' %' AS remise, rm.libelle AS remise_sur
 -- FROM REMISE r JOIN TYPEPLACE rs ON rs.id = r.catres JOIN TYPEPLACE rm ON rm.id = r.catrem;
+
+ALTER TABLE REMISE ADD (etat NUMBER DEFAULT 1 NOT NULL);

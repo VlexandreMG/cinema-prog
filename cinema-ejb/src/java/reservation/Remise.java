@@ -18,6 +18,11 @@ public class Remise extends ClassMAPTable {
     private double valeur;
     private String catres;
     private String catrem;
+    private int etat;                 // 1 = pas encore appliquée, 11 = appliquée (ne se redéclenche plus)
+
+    public int getEtat() { return etat; }
+    public void setEtat(int etat) { this.etat = etat; }
+
 
     public Remise() {
         this.setNomTable("REMISE");
