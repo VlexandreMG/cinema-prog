@@ -1,5 +1,38 @@
 # La grille pour raconter son projet (et réussir un aléa)
 
+## La fondation (pour CONCEVOIR, avant le code) — valable pour tout projet
+
+> **« Mais Dis, Comment Il Tiendra Vraiment ? »**
+
+| Lettre | Couche | La seule question à retenir |
+|---|---|---|
+| **M** | Métier | Qui fait quoi ? (acteurs, verbes, règles en phrases) |
+| **D** | Données | Avec quelles choses, reliées comment ? (stocké ou calculé ? référence ou document figé ?) |
+| **C** | Cycle | Par quels états ça passe ? (dessiner les flèches) |
+| **I** | Invariants | Qu'est-ce qui ne doit **jamais** arriver ? (et qui le protège : écran, serveur, base) |
+| **T** | Temps | Et la fois suivante, en même temps, plus tard ? |
+| **V** | Vérité | Qui je crois ? (une seule source ; jamais le navigateur) |
+
+**Pour chaque flèche du cycle : A-A-R**
+
+| | Question |
+|---|---|
+| **A**vant | qu'est-ce qui doit être vrai pour avoir le droit de faire l'action ? |
+| **A**près | qu'est-ce qui a changé (états, lignes écrites) ? |
+| **R**até | si ça échoue au milieu, que reste-t-il ? (tout ou rien) |
+
+Exemple, l'aléa « annuler une réservation » :
+```
+          réserver            viser
+(rien) ──────────► CRÉÉE ──────────► PAYÉE
+                     └── annuler ──► ANNULÉE      ← et depuis PAYÉE ? à décider AVANT de coder
+```
+Avant : elle existe et est CRÉÉE. Après : état 0, ses places redeviennent libres. Raté : rien ne change.
+
+La fondation sert à **concevoir** (de haut en bas). La grille ci-dessous sert à **lire** une étape (pendant l'histoire).
+
+---
+
 Raconter le projet comme une **histoire** (« le guichetier fait X, que se passe-t-il ? ») sans s'attacher à la syntaxe, et se poser **5 questions à chaque étape**. Ces 5 questions viennent des erreurs réellement faites (aléa de la remise, récit de l'histoire « réserver »).
 
 ---
