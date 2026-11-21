@@ -2,6 +2,9 @@ package reservation;
 
 import bean.ClassMAPTable;
 import java.sql.Connection;
+import bean.CGenUtil;
+import utils.CinemaUtil;
+import utilitaire.UtilDB;
 
 public class Remise extends ClassMAPTable {
 
@@ -42,4 +45,17 @@ public class Remise extends ClassMAPTable {
     public void setCatrem(int catrem) { this.catrem = catrem; }
     public int getEtat() { return etat; }
     public void setEtat(int etat) { this.etat = etat; }
+
+    public static Remise[] getRemiseBycatres(Connection c, int catres) throws Exception {
+        
+    boolean ouvert = false;
+    try {
+        if (c == null) { c = new UtilDB().GetConn(); ouvert = true; }   // j'ouvre si on ne m'a rien donné
+        // ... le travail, en passant TOUJOURS c ...
+        Object[] res = CGenUtil.rechercher(new Remise(), null, null, c, " and catres = '" + catres + "'");
+    } finally {
+        if (ouvert && c != null) c.close();                            // je ferme seulement ce que j'ai ouvert
+    }
+
+    }
 }

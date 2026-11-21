@@ -87,7 +87,6 @@ public class Reservation extends ClassMere {
         Set<String> dejaChoisies = new HashSet<String>();
         for (ReservationDetail ligne : lignes) {
             Place place = (Place) CinemaUtil.parId(new Place(), ligne.getIdplace(), c);
-
             if (!dejaChoisies.add(place.getId())) {
                 throw new Exception("La place " + place.getNumero() + " est choisie deux fois.");
             }
