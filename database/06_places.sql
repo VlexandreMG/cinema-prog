@@ -1,3 +1,4 @@
+-- Active: 1794266528165@@@443@EE@CINEMA
 -- ============================================================
 -- Cinema : les places des salles A, B et C (plan de salle)
 -- A executer UNE SEULE FOIS, apres 05_programme_novembre.sql (les salles doivent exister).
